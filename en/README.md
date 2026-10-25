@@ -25,8 +25,7 @@ This implementation conforms to "ZT-DSP Protocol Master Guide"; the path is give
 ZT-DSP-docs/en/spec/ZT-DSP-1.0.2-Master_Guide.md
 ```
 
-Documentation and code are **not bound by version numbers**: the document side declares
-"which settings of the code this document governs", and the code side declares "which document this implementation follows".
+Documentation and code are **not bound by version numbers**: the document side declares "which settings of the code this document governs", and the code side declares "which document this implementation follows".
 **Handshake frames carry no version string** — neither the phase 1 parameter JSON nor the phase 4 AAD contains any version or protocol identifier field.
 
 ## Directory Layout
@@ -81,7 +80,9 @@ export ZT_DSP_PSK=<64-digit hex>       # Linux/macOS
 zt-dsp-py --role listen --port 37291 --psk-env
 ```
 
-**Running with no arguments starts the interactive wizard** (recommended for beginners): it asks in turn for the role, address and port, the PSK (pressing Enter generates a fresh PSK and prints it for the peer) and the protocol parameters, with Enter accepting the default at every step. When stdin or stdout is redirected (pipe, CI, IDE), no-argument startup prints usage and exits 0 instead of blocking.
+**Running with no arguments starts the interactive wizard** (recommended for beginners): it asks in turn for the role, address and port,
+the PSK (pressing Enter generates a fresh PSK and prints it for the peer) and the protocol parameters, with Enter accepting the default at every step. When stdin or stdout is
+redirected (pipe, CI, IDE), no-argument startup prints usage and exits 0 instead of blocking.
 
 Inside a session, type a message and press Enter to send; exit with /quit or Ctrl+C. For a two-instance demo on the local machine, open a second terminal and run the opposite role with the same PSK and parameters.
 
@@ -127,7 +128,7 @@ and a real two-sided TCP flow.
 |----|----|
 | applicable document version | 1.0.0, 1.0.1 and 1.0.2 (may be several; see "Applicability" below) |
 | client version | ZT-DSP_PY-1.0.0 (Python in this repository), ZT-DSP_RS-1.0.0 (Rust in this repository) |
-| server version | ZT-DSP_SV-1.0.0 (repository `ZT-DSP-server`, placeholder, not implemented yet) |
+| server version | ZT-DSP_SV-1.0.0 (Rust implementation in the repository `ZT-DSP-server`, Python implementation in this repository at `zt_dsp_sv_py/`) |
 | program ID | ZT-DSP_PY-1.0.0 (prefix PY) |
 | followed document | "ZT-DSP Protocol Master Guide", path ZT-DSP-docs/en/spec/ZT-DSP-1.0.2-Master_Guide.md |
 

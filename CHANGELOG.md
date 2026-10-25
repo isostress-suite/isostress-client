@@ -44,6 +44,14 @@ authoritative change history is `git log`. If the two ever disagree, `git log` w
 
 ### Fixed
 
+- **The client READMEs no longer call the server implementation a
+  placeholder.** The "server version" and "current value" rows in both
+  mirrors still marked `ZT-DSP_SV-1.0.0` as "占位，尚未实现" / "not
+  implemented yet", although both implementations have landed: Rust in
+  ZT-DSP-server (merged as ZT-DSP-server#1) and Python as `zt_dsp_sv_py`
+  in this repository (merged as #12). The rows now state where each
+  implementation lives, and the "current value" rows drop the marker.
+
 - **The `zt-dsp-sv` wheel was unbuildable and under-declared.** Its pyproject
   listed a package directory that does not exist (no `package-dir`, so
   `pip wheel` failed with "package directory 'zt_dsp_sv_py' does not exist"),
