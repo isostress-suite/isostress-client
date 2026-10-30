@@ -18,6 +18,10 @@ path = "zt-dsp-rs.rs"
 
 [dependencies]
 x25519-dalek = "3"
+# The three crates below move together or not at all: sha3 0.12 does not
+# implement the CoreProxy trait from digest 0.11, so hmac 0.13 cannot wrap
+# it and Hmac<Sha3_256> fails to compile; sha2 0.11 and hmac 0.13 pair with
+# each other. Raise the three pins as one set.
 sha3 = "0.10"
 sha2 = "0.10"
 hmac = "0.12"

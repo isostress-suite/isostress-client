@@ -24,9 +24,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip "ruff==0.17.1"
-      # The formatter is pinned so the baseline stays reproducible; dependabot
-      # raises the pin. The committed [tool.ruff] section fixes line length and
-      # quote style.
+      # The formatter is pinned so the baseline stays reproducible; the pin
+      # moves only in a signed commit. The committed [tool.ruff] section fixes
+      # line length and quote style.
       - name: Check formatting
         run: ruff format --check zt_dsp_py
 
