@@ -19,8 +19,7 @@
 //!   a protocol identifier field. Whether the peer is compatible is reflected by the phase-3 confirmation tag verification.
 //!
 //! The correspondence between the document and the code is maintained by a **bidirectional declaration**, not bound by version numbers:
-//! The code side declares "which documents this implementation applies to" (see `FOLLOWS_DOC` / `FOLLOWS_DOC_PATH` /
-//! `APPLIES_TO_DOC_VERSIONS`).
+//! The code side declares "which documents this implementation applies to" (see `FOLLOWS_DOC` / `FOLLOWS_DOC_PATH`).
 //!
 //! This module is the single source of truth; version strings must never be hardcoded anywhere else.
 
@@ -32,9 +31,6 @@ pub const FOLLOWS_DOC: &str = "ZT-DSP Protocol Master Guide";
 
 /// Code-side bidirectional declaration: the path of the followed document.
 pub const FOLLOWS_DOC_PATH: &str = "ZT-DSP-docs/en/spec/ZT-DSP-1.0.2-Master_Guide.md";
-
-/// Total-guide versions this implementation applies to (many-to-many: may hold several).
-pub const APPLIES_TO_DOC_VERSIONS: &[&str] = &["1.0.0", "1.0.1", "1.0.2"];
 
 /// docs version (document revision number, does not participate in network communication).
 pub const DOCS_VERSION: &str = "1.0.2";
@@ -84,8 +80,6 @@ mod tests {
 
     #[test]
     fn applicability_is_many_to_many() {
-        assert_eq!(APPLIES_TO_DOC_VERSIONS, &["1.0.0", "1.0.1", "1.0.2"]);
-        assert!(APPLIES_TO_DOC_VERSIONS.contains(&DOCS_VERSION));
         assert!(CLIENT_VERSIONS.contains(&IMPLEMENTATION_ID));
         assert!(!SERVER_VERSIONS.contains(&IMPLEMENTATION_ID));
         assert_eq!(SERVER_VERSIONS, &["ZT-DSP_SV-1.0.0"]);

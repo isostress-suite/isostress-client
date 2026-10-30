@@ -30,7 +30,7 @@ The correspondence between documentation and code is maintained via a **bidirect
 
     - Doc side: each document's header declares "which implementations this document applies to"
     - Code side: declares "which documents this implementation applies to" -- see the
-      FOLLOWS_DOC / FOLLOWS_DOC_PATH / APPLIES_TO_DOC_VERSIONS constants below
+      FOLLOWS_DOC / FOLLOWS_DOC_PATH constants below
 
 Handshake frames **carry no protocol-identifier constants**: the Phase 1 parameter JSON and the Phase 4 AAD
 contain no version string. Whether the peer is compatible is reflected by the Phase 3 confirmation-label check.
@@ -44,9 +44,6 @@ Hard-coding version strings anywhere is forbidden; this module is the single sou
 # Once published, read it from the ZT-DSP-docs repository on GitHub.
 FOLLOWS_DOC: str = "ZT-DSP Protocol Master Guide"
 FOLLOWS_DOC_PATH: str = "ZT-DSP-docs/en/spec/ZT-DSP-1.0.2-Master_Guide.md"
-
-# --- Total-guide versions this implementation applies to (many-to-many: may hold several) ---
-APPLIES_TO_DOC_VERSIONS: tuple[str, ...] = ("1.0.0", "1.0.1", "1.0.2")
 
 # --- total-guide version (document revision number; takes no part in network communication) ---
 DOCS_VERSION: str = "1.0.2"

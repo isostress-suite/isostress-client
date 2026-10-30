@@ -45,11 +45,6 @@ Documentation and code are **not bound by version numbers**: the document side d
 │   ├── cli.py                 minimal command line
 │   └── tests/                 pytest suite (primitives/frames/handshake/session/end-to-end)
 ├── zt_dsp_rs/               Rust reference implementation (program ID ZT-DSP_RS-1.0.0; flat single-bin crate)
-├── zt_dsp_sv_py/            Python server implementation (program ID ZT-DSP_SV-1.0.0)
-│   ├── version.py           version contract (server role, role prefix SV)
-│   ├── server.py            pairing, byte relay and the L4 control plane (one file)
-│   ├── CONFORMANCE.md       protocol conformance checklist (with two open questions)
-│   └── tests/               pytest suite
 ├── LICENSE
 └── README.md
 ```
@@ -81,7 +76,8 @@ export ZT_DSP_PSK=<64-digit hex>       # Linux/macOS
 zt-dsp-py --role listen --port 37291 --psk-env
 ```
 
-**Running with no arguments starts the interactive wizard** (recommended for beginners): it asks in turn for the role, address and port, the PSK (pressing Enter generates a fresh PSK and prints it for the peer) and the protocol parameters, with Enter accepting the default at every step. When stdin or stdout is redirected (pipe, CI, IDE), no-argument startup prints usage and exits 0 instead of blocking.
+**Running with no arguments starts the interactive wizard** (recommended for beginners): it asks in turn for the role, address and port, the PSK (pressing Enter generates a fresh PSK and prints it for the peer) and the protocol parameters, with Enter accepting the default at every step.
+When stdin or stdout is redirected (pipe, CI, IDE), no-argument startup prints usage and exits 0 instead of blocking.
 
 Inside a session, type a message and press Enter to send; exit with /quit or Ctrl+C. For a two-instance demo on the local machine, open a second terminal and run the opposite role with the same PSK and parameters.
 
@@ -127,7 +123,7 @@ and a real two-sided TCP flow.
 |----|----|
 | applicable document version | 1.0.0, 1.0.1 and 1.0.2 (may be several; see "Applicability" below) |
 | client version | ZT-DSP_PY-1.0.0 (Python in this repository), ZT-DSP_RS-1.0.0 (Rust in this repository) |
-| server version | ZT-DSP_SV-1.0.0 (repository `ZT-DSP-server`, placeholder, not implemented yet) |
+| server version | ZT-DSP_SV-1.0.0; both server implementations (Rust and Python) live in the ZT-DSP-server repository |
 | program ID | ZT-DSP_PY-1.0.0 (prefix PY) |
 | followed document | "ZT-DSP Protocol Master Guide", path ZT-DSP-docs/en/spec/ZT-DSP-1.0.2-Master_Guide.md |
 
@@ -161,7 +157,7 @@ and a real two-sided TCP flow.
 | multi-language coexistence | implementations in different languages **may share the same version number** (ZT-DSP_PY-1.0.0 and ZT-DSP_GO-1.0.0 coexist), distinguished by the language prefix |
 | participates in network communication | No (the version number itself does not participate; handshake frames carry no version string) |
 | other-language implementations | the development languages are Python and Rust; to add another language, create a sibling directory named after its program ID (for example zt_dsp_go/), alongside zt_dsp_py/ and zt_dsp_rs/, with a protocol conformance checklist attached |
-| server implementations | a server implementation is named after its program ID as well (zt_dsp_sv_py/) and carries a protocol conformance checklist; a server never decrypts, it only pairs and relays bytes |
+| server implementations | both server implementations (Rust and Python) live in the ZT-DSP-server repository and carry a protocol conformance checklist; a server never decrypts, it only pairs and relays bytes |
 | merge / recording suggestions | when merging a fork, when a maintainer creates a new branch, or when promoting a standalone implementation to the mainline, the core recommendation is: **collect all code into a single file** (one implementation per file, no new directory trees added to the mainline directory), with a protocol conformance checklist attached |
 
 #### Applicability (many-to-many)
@@ -171,7 +167,7 @@ The relation between a document version and the client/server versions is **not*
 | Relation | Rule |
 |----------|------|
 | one document version -> several implementation versions | several implementations of the same kind whose protocol behaviour has not changed **share one declaration**; no rewrite is needed per version |
-| several document versions -> one implementation version | one implementation may apply to several guides at once; listed item by item in `APPLIES_TO_DOC_VERSIONS` |
+| several document versions -> one implementation version | one implementation may apply to several guides at once; the applicable list is kept item by item in the doc-side declaration |
 | same number, different implementation | identical version numbers do **not** mean the same implementation and do not constitute a compatibility claim |
 | how compatibility is decided | applicability is a **declaration**, not a test; real compatibility is shown by the phase-three confirmation-label check |
 

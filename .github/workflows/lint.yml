@@ -30,22 +30,6 @@ jobs:
       - name: Check formatting
         run: ruff format --check zt_dsp_py
 
-  # A separate job on purpose. The client formatting job above is red on main
-  # today, and a failing step stops the rest of its job, so folding the server
-  # role into it would mean the server role is never actually checked. As its own
-  # job it runs and reports independently.
-  python-format-server:
-    name: Python formatting (server role)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
-        with:
-          python-version: "3.12"
-      - run: python -m pip install --upgrade pip ruff
-      - name: Check formatting
-        run: ruff format --check zt_dsp_sv_py
-
   rust-format:
     name: Rust formatting (rustfmt + clippy)
     runs-on: ubuntu-latest

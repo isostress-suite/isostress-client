@@ -5,7 +5,6 @@
 """Version contract tests (total-guide / client / server versions; see the "Naming Rules" section of the root README)."""
 
 from zt_dsp_py.version import (
-    APPLIES_TO_DOC_VERSIONS,
     CLIENT_VERSIONS,
     CODE_VERSION,
     DOCS_VERSION,
@@ -48,12 +47,12 @@ def test_server_versions_declared_separately() -> None:
     assert IMPLEMENTATION_ID not in SERVER_VERSIONS
 
 
-def test_applies_to_is_many_to_many() -> None:
-    # a tuple, because one implementation may apply to several total-guide versions,
-    # and several implementations may apply to one total-guide version
-    assert isinstance(APPLIES_TO_DOC_VERSIONS, tuple)
-    assert APPLIES_TO_DOC_VERSIONS == ("1.0.0", "1.0.1", "1.0.2")
-    assert DOCS_VERSION in APPLIES_TO_DOC_VERSIONS
+def test_no_doc_applicability_constant() -> None:
+    # applicability is declared on the doc side; the code side carries no
+    # applicability constant (removed; see CHANGELOG "Removed")
+    import zt_dsp_py.version as version_module
+
+    assert not hasattr(version_module, "APPLIES_TO_DOC_VERSIONS")
 
 
 def test_follows_doc_declaration() -> None:

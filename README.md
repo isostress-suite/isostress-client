@@ -26,11 +26,10 @@ Documentation follows a bilingual mirror layout: `cn/` and `en/` contain the sam
 |---|---|---|
 | `zt_dsp_py/` | Python | `ZT-DSP_PY-1.0.0` |
 | `zt_dsp_rs/` | Rust | `ZT-DSP_RS-1.0.0` |
-| `zt_dsp_sv_py/` | Python | `ZT-DSP_SV-1.0.0` |
 
 The development languages are **Python** and **Rust**; all implementations are
 first-class and follow the same Protocol Master Guide (docs 1.0.2). Other languages can be
-added following the implementation-identifier rule `ZT-DSP_<prefix>-<implementation version>`.
+added following the implementation-identifier rule `ZT-DSP_<prefix>-<implementation version>`. Both server implementations (Rust and Python) live in the [ZT-DSP-server](https://github.com/ZT-DSP-Suite/ZT-DSP-server) repository.
 
 Source comments and docstrings are in English.
 
@@ -74,7 +73,7 @@ cargo build --release
 |---|---|
 | [ZT-DSP-docs](https://github.com/ZT-DSP-Suite/ZT-DSP-docs) | Protocol specification and terminology |
 | `ZT-DSP-client` (this repository; local directory `ZT-DSP-client`) | Client edition (reference implementation) |
-| `ZT-DSP-server` | Server edition (in design) |
+| `ZT-DSP-server` | Server edition (both server implementations: Rust and Python) |
 
 ## License
 

@@ -52,6 +52,27 @@ lives in `git log`. If the two ever disagree, `git log` wins.
   concatenated output.
 - The Rust integration tests moved from the binary entry point into the library, so they
   can reach the modules directly.
+- **Version contract simplified: `APPLIES_TO_DOC_VERSIONS` removed.** The
+  applicability list is a doc-side declaration; before any release the
+  implementations declare the development baseline only (`FOLLOWS_DOC` /
+  `FOLLOWS_DOC_PATH` / `DOCS_VERSION`). The code side keeps the
+  `CLIENT_VERSIONS` / `SERVER_VERSIONS` pairing tables. The constant and its
+  assertions are gone from `zt_dsp_py/version.py`, `zt_dsp_rs/version.rs`, and
+  both test suites; the README applicability rows now point at the doc-side
+  declaration.
+
+### Removed
+
+- **The Python server implementation moved to the ZT-DSP-server repository.**
+  `zt_dsp_sv_py/` (package, tests, pyproject, LICENSE, CONFORMANCE.md, README)
+  now lives in ZT-DSP-server. The H8 ruling settled the placement: the client
+  role is a P2P/TCP direct endpoint, the server role is the relay-hop stand-in
+  for NAT traversal, and the client repository ships no server code. The server
+  CI steps (`Server role version banner`, `Server role tests`) and the
+  `python-format-server` lint job went with it; the three READMEs now state that
+  both server implementations (Rust and Python) live in ZT-DSP-server.
+  `SERVER_VERSIONS` stays in both version contracts as the pairing table for
+  the server role.
 
 ### Fixed
 
