@@ -1,6 +1,6 @@
 # Security Policy
 
-ZT-DSP is a security protocol; reports about the protocol, the Master Guide, or any
+isostress is a security protocol; reports about the protocol, the Master Guide, or any
 implementation here are welcome and treated seriously.
 
 ## Supported versions
@@ -28,7 +28,7 @@ public issue.
 
 - Cryptography is delegated to `cryptography` (Python) and the RustCrypto crates; a flaw in
   those libraries belongs upstream, but tell us if this project uses them incorrectly.
-- Both reference implementations (`zt_dsp_py/` in Python and `zt_dsp_rs/` in Rust) are supported
+- Both reference implementations (`isostress_py/` in Python and `isostress_rs/` in Rust) are supported
   and are expected to interoperate byte for byte. Reports against either are welcome.
 - Denial of service by injecting a packet that terminates an established session is a **known,
   deliberate** fail-closed tradeoff. Report it only if you

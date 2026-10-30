@@ -1,6 +1,6 @@
-# Contributing to ZT-DSP-client
+# Contributing to isostress-client
 
-This repository contains the ZT-DSP reference implementation in Python (`zt_dsp_py/`) and Rust (`zt_dsp_rs/`).
+This repository contains the isostress reference implementation in Python (`isostress_py/`) and Rust (`isostress_rs/`).
 
 ## Before you open a pull request
 
@@ -51,7 +51,7 @@ that waits over a weekday is waiting for a person, not rejected.
 
 # Contributor License Agreement (CLA)
 
-This agreement is between you ("You") and the ZT-DSP Suite maintainers ("the Maintainers").
+This agreement is between you ("You") and the isostress Suite maintainers ("the Maintainers").
 
 **1. You keep your copyright.** You retain all right, title and interest in your
 contribution. Nothing here transfers ownership.

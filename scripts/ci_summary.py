@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (c) 2026 ZT-DSP Suite maintainers (copyright holder: SCAL-ROAM)
+# Copyright (c) 2026 isostress Suite maintainers
 
 """Render JUnit and coverage results into a GitHub Actions job summary.
 

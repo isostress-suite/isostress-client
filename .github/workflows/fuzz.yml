@@ -40,13 +40,13 @@ jobs:
             cargo +nightly install cargo-fuzz
             # cargo-fuzz locates the fuzz directory relative to a cargo project;
             # the repository root has no Cargo.toml, the crate does.
-            cd zt_dsp_rs
+            cd isostress_rs
             cargo +nightly fuzz run --fuzz-dir ../fuzz frames -- -max_total_time=600
           else
             # atheris drives the Python parser; coverage-guided, same corpus.
             python -m pip install --upgrade pip
             python -m pip install atheris
-            python -m pip install -e ./zt_dsp_py
+            python -m pip install -e ./isostress_py
             # Same runtime budget as the Rust leg, so the job finishes inside its timeout.
             python fuzz/fuzz_frames.py -max_total_time=600
           fi

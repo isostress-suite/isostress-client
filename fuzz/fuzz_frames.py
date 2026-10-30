@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (c) 2026 ZT-DSP Suite maintainers (copyright holder: SCAL-ROAM)
+# Copyright (c) 2026 isostress Suite maintainers
 
-# ZT-DSP frame parser fuzz target (Python / atheris).
+# isostress frame parser fuzz target (Python / atheris).
 #
 # Mirror of fuzz/frames.rs: the same four untrusted-input entry points, driven
 # through a socket pair so the harness exercises the real socket-reading code rather
 # than a re-implementation that could silently drift from it.
 #
 # Invariant under test: **untrusted input must never raise an unexpected exception
-# type.** The protocol's documented rejections (ZTDSPProtocolError / ZTDSPTimeoutError /
+# type.** The protocol's documented rejections (ISOSTRESSProtocolError / ISOSTRESSTimeoutError /
 # ConnectionError / OSError) are correct behaviour; anything else -- IndexError,
 # struct.error, ValueError, MemoryError -- is a real finding, because a remote peer
 # must never be able to steer the parser into an unhandled state.
@@ -29,8 +29,8 @@ sys.path.insert(0, ".")
 
 with atheris.instrument_imports():
     warnings.simplefilter("ignore")
-    from zt_dsp_py.errors import ZTDSPProtocolError, ZTDSPTimeoutError
-    from zt_dsp_py.frames import (
+    from isostress_py.errors import ISOSTRESSProtocolError, ISOSTRESSTimeoutError
+    from isostress_py.frames import (
         read_confirm,
         read_data_header,
         read_pub_key,
@@ -39,8 +39,8 @@ with atheris.instrument_imports():
 
 # Documented, expected rejections. Everything else is a bug.
 EXPECTED = (
-    ZTDSPProtocolError,
-    ZTDSPTimeoutError,
+    ISOSTRESSProtocolError,
+    ISOSTRESSTimeoutError,
     ConnectionError,
     OSError,
     struct.error,   # a truncated length prefix is normal hostile input

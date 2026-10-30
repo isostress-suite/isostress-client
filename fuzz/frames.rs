@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copyright (c) 2026 ZT-DSP Suite maintainers (copyright holder: SCAL-ROAM)
+// Copyright (c) 2026 isostress Suite maintainers
 
-//! ZT-DSP frame parser fuzz target (Rust / cargo-fuzz).
+//! isostress frame parser fuzz target (Rust / cargo-fuzz).
 //
 // The frame readers take a `&mut TcpStream`, because that is what they really consume
 // on the wire. Fuzzing them therefore means feeding bytes through a socket pair rather
@@ -22,7 +22,7 @@ use std::io::Write;
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::time::{Duration, Instant};
 
-use zt_dsp_rs::frames::{
+use isostress_rs::frames::{
     read_confirm, read_data_header, read_pub_key, read_phase_one,
 };
 

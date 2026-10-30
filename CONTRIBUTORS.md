@@ -5,10 +5,10 @@ adding one line below, in the same pull request that carries their contribution.
 
 Format:
 
-    - <name> <email> - CLA accepted <YYYY-MM-DD>
+    - <name> [<email>] - CLA accepted <YYYY-MM-DD>
 
 ## Accepted
 
-- ZT-DSP Suite maintainers <SCAL-ROAM> - original author, all contributions before the CLA was introduced
-- ZT-DSP Suite maintainers <SCAL-ROAM> - CLA accepted 2026-10-23
-- ZT-DSP Suite maintainers <SCAL-ROAM> - CLA accepted 2026-10-24
+- isostress Suite maintainers - original author, all contributions before the CLA was introduced
+- isostress Suite maintainers - CLA accepted 2026-10-23
+- isostress Suite maintainers - CLA accepted 2026-10-24

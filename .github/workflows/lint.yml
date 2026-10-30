@@ -28,12 +28,15 @@ jobs:
       # raises the pin. The committed [tool.ruff] section fixes line length and
       # quote style.
       - name: Check formatting
-        run: ruff format --check zt_dsp_py
+        run: ruff format --check isostress_py
 
-  # A separate job on purpose. The client formatting job above is red on main
-  # today, and a failing step stops the rest of its job, so folding the server
-  # role into it would mean the server role is never actually checked. As its own
-  # job it runs and reports independently.
+  # A separate job on purpose: one failing role must not mask the other. If the
+  # two roles shared a job, the first red step would stop the run and the second
+  # role would go unchecked without anyone noticing.
+  #
+  # (Earlier this comment claimed the client formatting job was red on main. It
+  # is not: `ruff format --check isostress_py` passes with the pinned 0.17.1. The
+  # separation stays for the masking reason above.)
   python-format-server:
     name: Python formatting (server role)
     runs-on: ubuntu-latest
@@ -42,9 +45,9 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
           python-version: "3.12"
-      - run: python -m pip install --upgrade pip ruff
+      - run: python -m pip install --upgrade pip "ruff==0.17.1"
       - name: Check formatting
-        run: ruff format --check zt_dsp_sv_py
+        run: ruff format --check isostress_sv_py
 
   rust-format:
     name: Rust formatting (rustfmt + clippy)
@@ -54,6 +57,45 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       - name: Check formatting
-        run: cargo fmt --manifest-path zt_dsp_rs/Cargo.toml --check
+        run: cargo fmt --manifest-path isostress_rs/Cargo.toml --check
       - name: Clippy
-        run: cargo clippy --manifest-path zt_dsp_rs/Cargo.toml --all-targets -- -D warnings
+        run: cargo clippy --manifest-path isostress_rs/Cargo.toml --all-targets -- -D warnings
+
+  # `ruff check` had never run in CI: only `ruff format` did, so the findings in
+  # the table below could accumulate without anyone seeing them.
+  #
+  # Landing a rule subset that is green today (verified 0 findings) lets this job
+  # go live without a one-shot all-red run. Widen it by moving rules out of the
+  # "not adopted yet" list below; `ruff check --fix` clears 117 of the 157 today.
+  #
+  # Adopted now: E9, F63, F7, F82 — the fatal class (syntax errors, undefined
+  # names, broken comparisons, duplicate dict keys). A violation here is a real
+  # bug, never a style opinion.
+  #
+  # Not adopted yet, with what each family contributes today (repo-wide, 157
+  # total): UP 123 (modern typing: `dict` vs `Dict`, `X | None` vs `Optional`),
+  # I001 9 (import sorting), PLW1510 7 (`subprocess.run(check=...)`), RUF 7,
+  # BLE001 4 (blind `except Exception`), F401 2 + F841 2 (unused import /
+  # unused variable, both auto-fixable), S110 2, SIM102 1. Each needs review
+  # rather than a mass rewrite: UP changes public annotations, BLE001/S110 touch
+  # error handling.
+  #
+  # Why a rule subset and not a file whitelist: only 8 of 35 Python files are
+  # clean under the repo configuration, so a whitelist would guard 23% of the
+  # tree and would redden as soon as a listed file gains a second finding. The
+  # subset guards 100% of the tree for the rules it adopts.
+  python-lint:
+    name: Python lint (ruff check, adopted rule subset)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip "ruff==0.17.1"
+      - name: Ruff check (adopted subset)
+        run: python -m ruff check --select E9,F63,F7,F82 .
+      # Prints the outstanding debt on every run so the number stays visible
+      # instead of living in a document. Non-blocking by design.
+      - name: Report unadopted findings (non-blocking)
+        run: python -m ruff check --statistics . || true

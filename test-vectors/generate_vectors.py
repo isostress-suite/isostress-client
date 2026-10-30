@@ -1,41 +1,46 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (c) 2026 ZT-DSP Suite maintainers (copyright holder: SCAL-ROAM)
+# Copyright (c) 2026 isostress Suite maintainers
 
-"""ZT-DSP 跨实现共享测试向量 —— **生成器**。
+"""isostress 跨实现共享测试向量 —— **生成器**。
 
-这个文件**不参与 CI**。它只在两种时候跑：
+这个文件**参与 CI，但只以「重生成 + 逐字节比对」的方式参与**：
+`scripts/check.sh` 把输出写进临时目录，再与已提交的 `vectors.json` 比对；
+CI 走的就是这个脚本，所以生成器在 CI 里是**间接执行**的。
+它仍然在两种时候由人手工跑：
   1. 新增向量种类时；
   2. 协议语义变更后，重新生成并**人工复核 diff**。
 
-CI 里两侧（Python / Rust）只**读** `vectors.json`，从不重新生成。
+比对**不采纳**算出来的结果：权威副本始终是提交进仓的 `vectors.json`。
 理由：向量若由被检验方自己算出，检验就退化成自证——Python 生成、Rust 断言，
 只能证明「Rust 等于 Python」；它证明不了「两者都等于规范」。
 所以 RFC 向量取自 RFC 原文（第三方权威），协议向量在生成后**提交进仓**，
-改动它会出现在 diff 里，人能看到。
+改动它会出现在 diff 里，人能看到。比对只在两种情况下报警：
+有人手改了 JSON 却没重生成，或改了生成器却没重生成。
 
 用法：
-    cd ZT-DSP-client
+    cd isostress-client
     python test-vectors/generate_vectors.py
 
 覆盖的推导链（与 Master Guide 第 4.2 节 / 附录 F 一一对应）：
     dh          = X25519(sk, pk)                                  附录 F.3
     mk          = HKDF(ikm = PSK || dh, salt = session_salt,
-                      info = "ZT-DSP-MK-v3", L = key_len)          4.2.2
-    anchor      = HMAC(mk, "ZT-DSP-ANCHOR-v3")                     4.2.3
-    session_id  = HKDF(ikm = anchor, info = "ZT-DSP-SID-v3",
+                      info = "ISOSTRESS-MK-v3", L = key_len)          4.2.2
+    anchor      = HMAC(mk, "ISOSTRESS-ANCHOR-v3")                     4.2.3
+    session_id  = HKDF(ikm = anchor, info = "ISOSTRESS-SID-v3",
                       L = 256)[:32]                                附录 F.4
     ek_send     = HKDF(ikm = mk || anchor || 0x01,
-                      info = "ZT-DSP-EK-v3", L = key_len)          4.2.4
+                      info = "ISOSTRESS-EK-v3", L = key_len)          4.2.4
     ek_recv     = HKDF(ikm = mk || anchor || 0x02,
-                      info = "ZT-DSP-EK-v3", L = key_len)
+                      info = "ISOSTRESS-EK-v3", L = key_len)
     ek_rotate   = HKDF(ikm = ek || next_seed,
-                      info = "ZT-DSP-EK-ROTATE", L = key_len)      附录 F.5
+                      info = "ISOSTRESS-EK-ROTATE", L = key_len)      附录 F.5
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -44,15 +49,15 @@ HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from zt_dsp_py.crypto import CryptoSuite           # noqa: E402
-from zt_dsp_py.frames import (                     # noqa: E402
+from isostress_py.crypto import CryptoSuite           # noqa: E402
+from isostress_py.frames import (                     # noqa: E402
     build_aad,
     gcm_nonce,
     pack_confirm,
     pack_initiator_key,
     pack_responder_key,
 )
-from zt_dsp_py.handshake import (                  # noqa: E402
+from isostress_py.handshake import (                  # noqa: E402
     INFO_ANCHOR,
     INFO_CONFIRM_INIT,
     INFO_CONFIRM_RESP,
@@ -198,6 +203,21 @@ def build() -> dict:
         ),
     })
 
+    # ---- OpenSSL 交叉校验（第三方工具，非本项目推导）----
+    # 同一 info 标签（ISOSTRESS-EK-v3）下，OpenSSL 的 KDF 与实现必须同值。
+    # 值由 openssl(3.5.9) 的 kdf HKDF 命令产出后手抄，故同样走 self_assert_rfc()。
+    vectors.append({
+        "name": "openssl-sha3-256-hkdf-crosscheck",
+        "kind": "hkdf",
+        "why": "OpenSSL 3.5.9 openssl kdf 与标准库手写 HKDF 产出的同一 OKM，覆盖协议自己的 info 标签",
+        "hash": "SHA3-256",
+        "ikm": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+        "salt": "00" * 32,
+        "info": "5a542d4453502d454b2d7633",
+        "length_bits": 256,
+        "okm": "31d7a5ad0d9cec1994d4762371dcd4446a1d2a1ed70dff1435ca98afd9b077d1",
+    })
+
     # ---- RFC 7748 官方 X25519 向量 ----
     vectors.append({
         "name": "rfc7748-x25519-dh",
@@ -279,17 +299,17 @@ def build() -> dict:
         "why": "附录 F.5：AES-256-GCM 在固定 key/nonce/plaintext/aad 下必须产出同一密文",
         "key": h(bytes(range(32))),
         "nonce": h(gcm_nonce(1)),
-        "plaintext": b"ZT-DSP deterministic AEAD check".hex(),
+        "plaintext": b"isostress deterministic AEAD check".hex(),
         "aad": h(build_aad(bytes(range(32, 64)), 1)),
         "ciphertext": h(suite.aead_encrypt(bytes(range(32)), gcm_nonce(1),
-                                           b"ZT-DSP deterministic AEAD check",
+                                           b"isostress deterministic AEAD check",
                                            build_aad(bytes(range(32, 64)), 1))),
     })
 
     return {
-        "schema": "zt-dsp-shared-vectors/1",
-        "note": ("Shared known-answer vectors for ZT-DSP 1.0.2. Consumed by BOTH "
-                 "zt_dsp_py and zt_dsp_rs. Regenerate with "
+        "schema": "isostress-shared-vectors/1",
+        "note": ("Shared known-answer vectors for isostress 1.0.0. Consumed by BOTH "
+                 "isostress_py and isostress_rs. Regenerate with "
                  "test-vectors/generate_vectors.py and review the diff."),
         "labels": {
             "INFO_MK": INFO_MK,
@@ -304,11 +324,24 @@ def build() -> dict:
     }
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    out = OUT
+    args = list(sys.argv[1:] if argv is None else argv)
+    if args:
+        if len(args) == 2 and args[0] == "--out":
+            out = Path(args[1])
+        elif len(args) == 1:
+            out = Path(args[0])
+        else:
+            raise SystemExit("usage: generate_vectors.py [--out PATH]")
+        out.parent.mkdir(parents=True, exist_ok=True)
     doc = build()
     self_assert_rfc(doc["vectors"])
     text = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
-    OUT.write_text(text, encoding="utf-8")
+    # 显式 LF：Windows 的文本模式会把 \n 翻成 \r\n，使每次重生成都产生全文件伪 diff，
+    # 三仓副本也会因此在字节层面分叉。写入必须与平台无关。
+    with out.open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text)
 
     # 自检：交叉断言必须成立，否则这份向量本身就是坏的
     for v in doc["vectors"]:
@@ -319,7 +352,9 @@ def main() -> None:
                 raise SystemExit("[!] %s: 方向性密钥不交叉" % v["name"])
             if v["initiator_recv_ek"] != v["responder_send_ek"]:
                 raise SystemExit("[!] %s: 方向性密钥不交叉" % v["name"])
-    print("[ok] wrote %s (%d vectors)" % (OUT, len(doc["vectors"])))
+    print("[ok] wrote %s (%d vectors, sha256=%s)"
+          % (out, len(doc["vectors"]),
+             hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]))
 
 
 if __name__ == "__main__":
