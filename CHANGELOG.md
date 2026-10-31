@@ -12,22 +12,47 @@ lives in `git log`. If the two ever disagree, `git log` wins.
 
 ### Added
 
+- **isostress 1.0.0 specification additions (normative).** The 1.0.0 working tree adds a
+  normative resource bound to H.3 -- per held connection: hold duration, concurrent
+  held-connection count, and buffered-byte bound; the hold duration range is `(0, 15s]`
+  and the 15 s ceiling cannot be relaxed -- plus three matching `C.1` checklist items
+  that record those bound values. Both are new normative obligations for an
+  implementation. `C.1` also now matches §4.2.3 on sequence numbers: drop the packet
+  **and** terminate the session.
+- **Build-date segment in the implementation identifier.** `BUILD_DATE` is empty by
+  default, so `--version` keeps the release form. A non-empty value must be eight
+  digits and is appended as `-YYYYMMDD` on development builds only; release
+  candidates and releases drop the segment. Both implementations
+  compose the identifier through one helper, so a malformed date fails there.
 - **Shared known-answer test vectors** (`test-vectors/vectors.json`), consumed by *both*
   the Python and the Rust implementation. Before this, each implementation had its own
   private tests and the only cross-implementation evidence was a live loopback
-  handshake. The vectors pin RFC 5869 (HKDF), RFC 7748 (X25519), the full ZT-DSP
+  handshake. The vectors pin RFC 5869 (HKDF), RFC 7748 (X25519), the full isostress
   derivation chain (PSK‖DH → MK → anchor → session_id → directional EK → ratchet), the
   wire format, and a deterministic AEAD ciphertext.
 - Fuzz targets for the frame parsers (`fuzz/`, atheris + cargo-fuzz), run weekly
   by `.github/workflows/fuzz.yml`. The frame readers consume attacker-controlled length
   prefixes; they now have continuous coverage instead of hand-written cases only.
-- Library target for the Rust crate (`zt_dsp_rs`), so the protocol can be depended on
+- Library target for the Rust crate (`isostress_rs`), so the protocol can be depended on
   and the fuzz target can link against it.
 - `dependabot.yml` for pip, cargo and GitHub Actions.
 - `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, and a pull request template.
 
 ### Changed
 
+- **Environment variables renamed.** The four environment variables now use the
+  `ISOSTRESS_` prefix: `ISOSTRESS_PSK`, `ISOSTRESS_NO_BANNER`, `ISOSTRESS_DEBUG`
+  and `ISOSTRESS_RS_BIN`. Scripts and CI jobs that export the retired prefix must
+  switch; the old names are no longer read. Breaking for tooling only, not for the
+  wire format.
+- **Project renamed to isostress (ISTS); numbering reset.** The retired name is gone
+  from modules, packages, identifiers and prose: `isostress_py` / `isostress_rs` /
+  `isostress_sv_py`, packages `isostress-py` / `isostress-rs`, identifiers
+  `ISOSTRESS_PY` / `ISOSTRESS_RS` / `ISOSTRESS_SV`. The ten KDF context strings carry
+  the `ISOSTRESS-` prefix, so every derived key changes and the shared vectors were
+  regenerated. Numbering restarts at 1.0.0 on 2026-10-29: development builds advance
+  only the `-YYYYMMDD` segment; a numeric bump happens only on a wire-format change or
+  a release.
 - **The Rust key-holding structs no longer expose themselves to `{:?}`.**
   `SessionMaterial`, `SessionState` and `SessionConfig` carried derived
   `Debug`, and the first and last also derived `Clone`. `SessionMaterial`
@@ -39,9 +64,13 @@ lives in `git log`. If the two ever disagree, `git log` wins.
   only; `SessionState` and `Args` lost `Debug`; the two `Clone` derives
   are gone. Two tests pin that the Debug output shows lengths and never
   key bytes.
-- **Document version aligned to 1.0.2.** Both implementations now report
-  `(docs 1.0.2)`; the program version stays 1.0.0. The three READMEs drop the
+- **Document version aligned to 1.0.0.** Both implementations now report
+  `(docs 1.0.0)`; the program version stays 1.0.0. The three READMEs drop the
   deprecated hardware key-storage notices.
+- Development builds now carry the build-date segment in the program identifier
+  (`ISOSTRESS_PY-1.0.0-20261030`, `ISOSTRESS_RS-1.0.0-20261030`, `ISOSTRESS_SV-1.0.0-20261030`).
+  The numeric version stays `1.0.0`, package metadata stays numeric-only, and the
+  compatibility lists keep the date-free release form.
 - CI now pins **every** action to a commit SHA. Two steps in the interop job were left
   on movable tags, which contradicted the stated policy on that file's own header.
 - The interop CI job is renamed from `Interop (Python <-> Rust, byte-level)` to
@@ -57,7 +86,7 @@ lives in `git log`. If the two ever disagree, `git log` wins.
 
 - **A legal JSON number crashed the responder outside the funnel.** `json.loads`
   parses `1e999` to float infinity, and `int(inf)` raises `OverflowError`, which
-  neither `ZTDSPParams.from_wire` (`params.py`) nor the handshake's parameter
+  neither `ISOSTRESSParams.from_wire` (`params.py`) nor the handshake's parameter
   convergence (`handshake.py`) caught — a peer could produce a bare traceback
   where Appendix H.4 demands a funnelled, silent rejection. Both capture tuples
   now include `OverflowError`. The Rust path was audited and needs no change:
@@ -66,13 +95,13 @@ lives in `git log`. If the two ever disagree, `git log` wins.
   `test_primitives.py`, a responder-level silent-drop test, and a Rust parser
   rejection assertion.
 
-- **The `zt-dsp-sv` wheel was unbuildable and under-declared.** Its pyproject
+- **The `isostress-sv` wheel was unbuildable and under-declared.** Its pyproject
   listed a package directory that does not exist (no `package-dir`, so
-  `pip wheel` failed with "package directory 'zt_dsp_sv_py' does not exist"),
-  declared no dependency on `zt-dsp-py` although `server.py` imports it,
+  `pip wheel` failed with "package directory 'isostress_sv_py' does not exist"),
+  declared no dependency on `isostress-py` although `server.py` imports it,
   carried no license file, and claimed `requires-python >=3.9` while the
   dependency needs >=3.10. The pyproject now maps the flat layout, depends
-  on `zt-dsp-py>=1.0.0`, carries `LICENSE` verbatim, and requires Python
+  on `isostress-py>=1.0.0`, carries `LICENSE` verbatim, and requires Python
   >=3.10; `pip wheel` produces a wheel whose METADATA shows all fields.
 
 - **20 source references pointed at appendix letters that no longer exist.** The docs repo
@@ -93,4 +122,4 @@ lives in `git log`. If the two ever disagree, `git log` wins.
 
 ## [1.0.0]
 
-- Initial protocol implementation, following ZT-DSP Protocol Master Guide 1.0.0.
+- Initial protocol implementation, following isostress Protocol Master Guide 1.0.0.

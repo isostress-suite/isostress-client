@@ -2,8 +2,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/ZT-DSP-Suite/ZT-DSP-client/security/advisories/new
+    url: https://github.com/isostress-suite/isostress-client/security/advisories/new
     about: Report privately. Do not open a public issue for a vulnerability.
   - name: Documentation and protocol questions
-    url: https://github.com/ZT-DSP-Suite/ZT-DSP-docs
+    url: https://github.com/isostress-suite/isostress-docs
     about: The Master Guide and the bilingual terminology glossary live in the docs repository.

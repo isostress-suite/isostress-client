@@ -2,6 +2,20 @@ name: Bug report
 description: Report a defect in the protocol text or in an implementation
 labels: [bug]
 body:
+  - type: textarea
+    id: audience
+    attributes:
+      label: 需要者：
+      description: 谁会读这条单，例如维护者、评审人
+    validations:
+      required: true
+  - type: textarea
+    id: if-skipped
+    attributes:
+      label: 不读会错什么：
+      description: 不读会漏掉什么，例如复现条件、版本
+    validations:
+      required: true
   - type: markdown
     attributes:
       value: |
@@ -13,7 +27,7 @@ body:
       label: Area
       options:
         - Python reference implementation
-        - Rust implementation (zt_dsp_rs/)
+        - Rust implementation (isostress_rs/)
         - Protocol text / Master Guide
         - Documentation, packaging or CI
     validations:
@@ -22,7 +36,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: Output of "python -m zt_dsp_py --version", or the docs revision for a text defect.
+      description: Output of "python -m isostress_py --version", or the docs revision for a text defect.
     validations:
       required: true
   - type: textarea

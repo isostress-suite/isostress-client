@@ -1,4 +1,4 @@
-# ZT-DSP
+# isostress
 
 ## 这里有什么
 
@@ -6,9 +6,9 @@ The English implementation notes and Rust details.
 
 ## 按什么找
 
-Build and verification steps are in the [DEV-GUIDE](https://github.com/ZT-DSP-Suite/ZT-DSP-docs/blob/main/en/DEV-GUIDE.md).
+Build and verification steps are in the [DEV-GUIDE](https://github.com/isostress-suite/isostress-docs/blob/main/en/DEV-GUIDE.md).
 
-**Zero Trust Dynamic Synchronization Protocol** — development languages **Python and Rust**; reference implementations **ZT-DSP_PY-1.0.0** and **ZT-DSP_RS-1.0.0** (client version **1.0.0**) | conforms to "ZT-DSP Protocol Master Guide" (**docs 1.0.2**)
+**isostress (ISTS)** — development languages **Python and Rust**; reference implementations **ISOSTRESS_PY-1.0.0-20261030** and **ISOSTRESS_RS-1.0.0-20261030** (client version **1.0.0**) | conforms to "isostress Protocol Master Guide" (**docs 1.0.0**)
 
 An open, zero trust, end-to-end encrypted communication protocol with Python and Rust reference implementations. Built on **PSK + X25519 + AES-256-GCM + per-packet ratchet**, providing a four-phase handshake and full-duplex encrypted communication.
 
@@ -19,20 +19,19 @@ An open, zero trust, end-to-end encrypted communication protocol with Python and
 
 ## Correspondence Between Documentation and Code
 
-This implementation conforms to "ZT-DSP Protocol Master Guide"; the path is given by FOLLOWS_DOC_PATH in zt_dsp_py/version.py:
+This implementation conforms to "isostress Protocol Master Guide"; the path is given by FOLLOWS_DOC_PATH in isostress_py/version.py:
 
 ```
-ZT-DSP-docs/en/spec/ZT-DSP-1.0.2-Master_Guide.md
+isostress-docs/en/spec/isostress-1.0.0-Master_Guide.md
 ```
 
-Documentation and code are **not bound by version numbers**: the document side declares
-"which settings of the code this document governs", and the code side declares "which document this implementation follows".
+Documentation and code are **not bound by version numbers**: the document side declares "which settings of the code this document governs", and the code side declares "which document this implementation follows".
 **Handshake frames carry no version string** — neither the phase 1 parameter JSON nor the phase 4 AAD contains any version or protocol identifier field.
 
 ## Directory Layout
 
 ```
-├── zt_dsp_py/                  Python reference implementation (program ID ZT-DSP_PY-1.0.0)
+├── isostress_py/                  Python reference implementation (program ID ISOSTRESS_PY-1.0.0-20261030)
 │   ├── version.py             single source of truth for the version contract (document version / client version / applicability / followed document)
 │   ├── errors.py              protocol exception hierarchy (Master Guide Appendix H.5)
 │   ├── params.py              parameter set and validation (Appendix F.1: fixed seven-item order matching)
@@ -44,8 +43,8 @@ Documentation and code are **not bound by version numbers**: the document side d
 │   ├── transport.py           listener/connector runner + heartbeat chat session (Appendix H.3/H.6)
 │   ├── cli.py                 minimal command line
 │   └── tests/                 pytest suite (primitives/frames/handshake/session/end-to-end)
-├── zt_dsp_rs/               Rust reference implementation (program ID ZT-DSP_RS-1.0.0; flat single-bin crate)
-├── zt_dsp_sv_py/            Python server implementation (program ID ZT-DSP_SV-1.0.0)
+├── isostress_rs/               Rust reference implementation (program ID ISOSTRESS_RS-1.0.0-20261030; flat single-bin crate)
+├── isostress_sv_py/            Python server implementation (program ID ISOSTRESS_SV-1.0.0-20261030)
 │   ├── version.py           version contract (server role, role prefix SV)
 │   ├── server.py            pairing, byte relay and the L4 control plane (one file)
 │   ├── CONFORMANCE.md       protocol conformance checklist (with two open questions)
@@ -64,21 +63,21 @@ Documentation and code are **not bound by version numbers**: the document side d
 ### Install and Run
 
 ```bash
-cd zt_dsp_py
+cd isostress_py
 pip install .                     # or pip install -e .
-python -m zt_dsp_py --version
-# → ZT-DSP_PY-1.0.0 (docs 1.0.2)
+python -m isostress_py --version
+# → ISOSTRESS_PY-1.0.0-20261030 (docs 1.0.0)
 
 # Listening side (responder)
-zt-dsp-py --role listen --port 37291 --psk-file psk.txt
+isostress-py --role listen --port 37291 --psk-file psk.txt
 
 # Connecting side (initiator)
-zt-dsp-py --role connect --host <peer IP> --port 37291 --psk-file psk.txt
+isostress-py --role connect --host <peer IP> --port 37291 --psk-file psk.txt
 
 # Environment variable approach (recommended for scripts)
-set ZT_DSP_PSK=<64-digit hex>          # Windows
-export ZT_DSP_PSK=<64-digit hex>       # Linux/macOS
-zt-dsp-py --role listen --port 37291 --psk-env
+set ISOSTRESS_PSK=<64-digit hex>          # Windows
+export ISOSTRESS_PSK=<64-digit hex>       # Linux/macOS
+isostress-py --role listen --port 37291 --psk-env
 ```
 
 **Running with no arguments starts the interactive wizard** (recommended for beginners): it asks in turn for the role, address and port, the PSK (pressing Enter generates a fresh PSK and prints it for the peer) and the protocol parameters, with Enter accepting the default at every step. When stdin or stdout is redirected (pipe, CI, IDE), no-argument startup prints usage and exits 0 instead of blocking.
@@ -102,7 +101,7 @@ Inside a session, type a message and press Enter to send; exit with /quit or Ctr
 ### Tests
 
 ```bash
-python -m pytest zt_dsp_py/tests -q      # run from the repository root
+python -m pytest isostress_py/tests -q      # run from the repository root
 ```
 
 Coverage: version contract, derivation formulas (MK/EK/SID/nonce byte-for-byte against the Master Guide), parameter validation,
@@ -125,11 +124,11 @@ and a real two-sided TCP flow.
 
 | Item | Value |
 |----|----|
-| applicable document version | 1.0.0, 1.0.1 and 1.0.2 (may be several; see "Applicability" below) |
-| client version | ZT-DSP_PY-1.0.0 (Python in this repository), ZT-DSP_RS-1.0.0 (Rust in this repository) |
-| server version | ZT-DSP_SV-1.0.0 (repository `ZT-DSP-server`, placeholder, not implemented yet) |
-| program ID | ZT-DSP_PY-1.0.0 (prefix PY) |
-| followed document | "ZT-DSP Protocol Master Guide", path ZT-DSP-docs/en/spec/ZT-DSP-1.0.2-Master_Guide.md |
+| applicable document version | 1.0.0 |
+| client version | ISOSTRESS_PY-1.0.0-20261030 (Python in this repository), ISOSTRESS_RS-1.0.0-20261030 (Rust in this repository) |
+| server version | ISOSTRESS_SV-1.0.0-20261030 (`isostress_sv_py/` in this repository) |
+| program ID | ISOSTRESS_PY-1.0.0-20261030 (prefix PY) |
+| followed document | "isostress Protocol Master Guide", path isostress-docs/en/spec/isostress-1.0.0-Master_Guide.md |
 
 ### Naming Convention System (docs / code · required reading for takeover / fork)
 
@@ -140,8 +139,8 @@ and a real two-sided TCP flow.
 | Item | Rule |
 |----|------|
 | format | 1.0.x (major.minor.revision) |
-| carrier | the Master Guide document (`en/spec/ZT-DSP-1.0.2-Master_Guide.md` in the standalone document repository `ZT-DSP-docs`) |
-| current value | `1.0.2` |
+| carrier | the Master Guide document (`en/spec/isostress-1.0.0-Master_Guide.md` in the standalone document repository `isostress-docs`) |
+| current value | `1.0.0` |
 | revision digit increment | clarifications, errata, readability improvements — no change to any on-wire behavior definition |
 | minor digit increment | new appendix or optional section — no change to on-wire behavior definitions |
 | major digit increment | restatement of core protocol semantics (usually coupled with a client/server version increment) |
@@ -151,17 +150,18 @@ and a real two-sided TCP flow.
 
 | Item | Rule |
 |----|------|
-| format | `ZT-DSP_<prefix>-<major.minor.revision>`, e.g. `ZT-DSP_PY-1.0.0` (client) / `ZT-DSP_SV-1.0.0` (server) |
-| carrier | two kinds: **client versions** (`ZT-DSP_<language prefix>-<major.minor.revision>`) and **server versions** (`ZT-DSP_SV-<major.minor.revision>`); an implementation concretizes the specification but does not share its version number |
-| current value | ZT-DSP_PY-1.0.0 and ZT-DSP_RS-1.0.0 |
+| format | `isostress_<prefix>-<major.minor.revision>`, e.g. `ISOSTRESS_PY-1.0.0` (client) / `ISOSTRESS_SV-1.0.0` (server) |
+| date segment | a development build appends `-YYYYMMDD`, the commit date (UTC+8), to the version; release candidates and releases drop it, and both use the same identifier; package metadata keeps a numeric-only version |
+| carrier | two kinds: **client versions** (`isostress_<language prefix>-<major.minor.revision>`) and **server versions** (`ISOSTRESS_SV-<major.minor.revision>`); an implementation concretizes the specification but does not share its version number |
+| current value | ISOSTRESS_PY-1.0.0-20261030 and ISOSTRESS_RS-1.0.0-20261030; server ISOSTRESS_SV-1.0.0-20261030 |
 | language prefix table | PY=Python, GO=Go, RS=Rust, C=C++ (**not the C language or C#**, which must define their own prefixes), JS=JavaScript/TypeScript, JVM=Java/Kotlin; other languages define their own all-caps prefix, which must be unique across the repository |
 | revision digit increment | bug fixes, security hardening — on-wire byte format **unchanged** |
 | minor digit increment | new optional capability (e.g. a new hook, a padding strategy) — on-wire format unchanged or backward-compatible addition only |
 | major digit increment | change to the on-wire byte format (frame layout / derivation formula) — old and new implementations are by design not interoperable (handshake will necessarily fail) |
-| multi-language coexistence | implementations in different languages **may share the same version number** (ZT-DSP_PY-1.0.0 and ZT-DSP_GO-1.0.0 coexist), distinguished by the language prefix |
+| multi-language coexistence | implementations in different languages **may share the same version number** (ISOSTRESS_PY-1.0.0 and isostress_GO-1.0.0 coexist), distinguished by the language prefix |
 | participates in network communication | No (the version number itself does not participate; handshake frames carry no version string) |
-| other-language implementations | the development languages are Python and Rust; to add another language, create a sibling directory named after its program ID (for example zt_dsp_go/), alongside zt_dsp_py/ and zt_dsp_rs/, with a protocol conformance checklist attached |
-| server implementations | a server implementation is named after its program ID as well (zt_dsp_sv_py/) and carries a protocol conformance checklist; a server never decrypts, it only pairs and relays bytes |
+| other-language implementations | the development languages are Python and Rust; to add another language, create a sibling directory named after its program ID (for example isostress_go/), alongside isostress_py/ and isostress_rs/, with a protocol conformance checklist attached |
+| server implementations | a server implementation is named after its program ID as well (isostress_sv_py/) and carries a protocol conformance checklist; a server never decrypts, it only pairs and relays bytes |
 | merge / recording suggestions | when merging a fork, when a maintainer creates a new branch, or when promoting a standalone implementation to the mainline, the core recommendation is: **collect all code into a single file** (one implementation per file, no new directory trees added to the mainline directory), with a protocol conformance checklist attached |
 
 #### Applicability (many-to-many)
@@ -175,28 +175,28 @@ The relation between a document version and the client/server versions is **not*
 | same number, different implementation | identical version numbers do **not** mean the same implementation and do not constitute a compatibility claim |
 | how compatibility is decided | applicability is a **declaration**, not a test; real compatibility is shown by the phase-three confirmation-label check |
 
-So adding a Python patch release (`ZT-DSP_PY-1.0.1`, unchanged protocol behaviour) requires **no change** to this section; when the Master Guide moves to a new version, simply append it to the applicable list on the implementation side.
+So adding a Python patch release (`ISOSTRESS_PY-1.0.0`, unchanged protocol behaviour) requires **no change** to this section; when the Master Guide moves to a new version, simply append it to the applicable list on the implementation side.
 
 #### Bidirectional Documentation–Code Declaration
 
 Since handshake frames carry no version string, peer compatibility is not judged by version numbers. The correspondence between documentation and code is maintained by **bidirectional declarations**:
 
-- **Documentation side**: the header of spec/ZT-DSP-1.0.2-Master_Guide.md declares "this document defines the protocol behavior and tunable parameters on the code side".
-- **Code side**: FOLLOWS_DOC / FOLLOWS_DOC_PATH in zt_dsp_py/version.py declare which document this implementation follows.
+- **Documentation side**: the header of spec/isostress-1.0.0-Master_Guide.md declares "this document defines the protocol behavior and tunable parameters on the code side".
+- **Code side**: FOLLOWS_DOC / FOLLOWS_DOC_PATH in isostress_py/version.py declare which document this implementation follows.
 
 If the two ends follow inconsistent specifications, the handshake fails at the **phase 3 confirmation label**.
 
 #### Display and Citation Conventions
 
-- **Citing an implementation**: use its full version identifier (client or server), e.g. `ZT-DSP_PY-1.0.0`; do not append the document version
-- **--version output** (the two parts, in order): implementation version identifier, document version → ZT-DSP_PY-1.0.0 (docs 1.0.2)
-- **Citing protocol behavior**: write "for protocol behavior see section X of the ZT-DSP Protocol Master Guide"; do not cite a version string
+- **Citing an implementation**: use its full version identifier (client or server), e.g. `ISOSTRESS_PY-1.0.0`; do not append the document version
+- **--version output** (the two parts, in order): implementation version identifier, document version → ISOSTRESS_PY-1.0.0-20261030 (docs 1.0.0)
+- **Citing protocol behavior**: write "for protocol behavior see section X of the isostress Protocol Master Guide"; do not cite a version string
 - **Prohibitions**: ① mixing the docs version into the program ID; ② writing any version string into handshake frames; ③ reusing any version number ever used; ④ a discontinuous renumbering of an already-published version; ⑤ hardcoding any version string outside version.py
 
 #### Single Source of Truth and Change Process
 
-- zt_dsp_py/version.py is the **single source of truth**: DOCS_VERSION, CODE_VERSION / LANGUAGE_PREFIX / IMPLEMENTATION_ID, FOLLOWS_DOC / FOLLOWS_DOC_PATH
-- zt_dsp_py/tests/test_version.py locks the contract — a version change must update the test together with it; if the test is not updated, the commit is blocked
+- isostress_py/version.py is the **single source of truth**: DOCS_VERSION, CODE_VERSION / LANGUAGE_PREFIX / IMPLEMENTATION_ID, FOLLOWS_DOC / FOLLOWS_DOC_PATH
+- isostress_py/tests/test_version.py locks the contract — a version change must update the test together with it; if the test is not updated, the commit is blocked
 - Complete checklist for a version change: version.py → test_version.py → the corresponding table in this section → pyproject.toml (version = CODE_VERSION) → version references in the relevant documents
 
 ## License

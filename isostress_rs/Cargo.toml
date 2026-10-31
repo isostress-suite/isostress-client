@@ -1,0 +1,38 @@
+[package]
+name = "isostress-rs"
+version = "1.0.1"
+edition = "2021"
+description = "ISOSTRESS_RS-1.0.0 — reference Rust implementation of the isostress protocol (follows the isostress Protocol Master Guide, docs 1.0.0)"
+license = "AGPL-3.0-or-later"
+
+# The crate is both a library and a binary. The library target is what makes the
+# protocol usable as a dependency and lets fuzz/ (cargo-fuzz needs `use
+# <crate>::...`) link against it; the binary target is the CLI.
+[lib]
+name = "isostress_rs"
+path = "lib.rs"
+
+[[bin]]
+name = "isostress-rs"
+path = "isostress-rs.rs"
+
+[dependencies]
+x25519-dalek = "3"
+sha3 = "0.10"
+sha2 = "0.10"
+hmac = "0.12"
+aes-gcm = "0.11"
+aes = "0.9"
+subtle = "2"
+zeroize = { version = "1.9", features = ["derive"] }
+rand = "0.10"
+getrandom = "0.4"
+serde_json = "1"
+hex = "0.4"
+base64 = "0.23"
+socket2 = "0.5"
+clap = { version = "4", features = ["derive"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"

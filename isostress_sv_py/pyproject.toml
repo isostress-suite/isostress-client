@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "isostress-sv"
+version = "1.0.1"
+description = "isostress 1.0.1 server role: pair peers, then relay opaque bytes"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+dependencies = ["isostress-py>=1.0.0"]
+
+[project.scripts]
+isostress-server = "isostress_sv_py.server:main"
+
+[tool.setuptools]
+# Flat layout: the project root is the package directory (isostress_sv_py/pyproject.toml lives inside the package)
+packages = ["isostress_sv_py"]
+package-dir = { "isostress_sv_py" = "." }

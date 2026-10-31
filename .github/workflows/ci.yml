@@ -50,32 +50,42 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ./zt_dsp_py
-          python -m pip install pytest pytest-cov
+          python -m pip install -e ./isostress_py
+          python -m pip install pytest pytest-cov "ruff==0.17.1"
+
+      # The shared vectors must be reproducible from their generator. This used to
+      # live in the repository guard script, which is now maintainer-local only;
+      # the step is inlined here so the guarantee survives in CI without depending
+      # on a file the repositories no longer track.
+      - name: Shared vectors are reproducible
+        shell: bash
+        run: |
+          PYTHONPATH=isostress_py python test-vectors/generate_vectors.py --out "$RUNNER_TEMP/vectors.json"
+          cmp "$RUNNER_TEMP/vectors.json" test-vectors/vectors.json
 
       - name: Version banner
-        run: python -m zt_dsp_py --version
+        run: python -m isostress_py --version
 
       - name: Test with coverage
         run: >
-          python -m pytest zt_dsp_py/tests -q
-          --cov=zt_dsp_py --cov-report=term --cov-report=xml:coverage.xml
+          python -m pytest isostress_py/tests -q
+          --cov=isostress_py --cov-report=term --cov-report=xml:coverage.xml
           --junitxml=junit.xml
 
       - name: Server role version banner
-        run: python -m zt_dsp_sv_py --version
+        run: python -m isostress_sv_py --version
 
       # The server role is its own package with its own tests. Running them here
       # keeps the guarantee that a green pull request means both roles work, not
       # just the client.
       - name: Server role tests
-        run: python -m pytest zt_dsp_sv_py/tests -q
+        run: python -m pytest isostress_sv_py/tests -q
 
       - name: Non-interactive startup must not hang (Linux)
         if: runner.os == 'Linux'
         run: |
-          python -m zt_dsp_py < /dev/null > /tmp/zt-dsp-usage.txt
-          grep -qi "usage:" /tmp/zt-dsp-usage.txt
+          python -m isostress_py < /dev/null > /tmp/isostress-usage.txt
+          grep -qi "usage:" /tmp/isostress-usage.txt
 
       - name: Job summary
         if: always()
@@ -103,11 +113,11 @@ jobs:
         # Proves the packaging layout actually produces an installable artifact.
         run: |
           python -m pip install --upgrade pip build
-          python -m build ./zt_dsp_py --outdir dist
+          python -m build ./isostress_py --outdir dist
       - name: Verify the wheel installs and runs
         run: |
           python -m pip install dist/*.whl
-          python -m zt_dsp_py --version
+          python -m isostress_py --version
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: dist
@@ -122,7 +132,7 @@ jobs:
       CARGO_TARGET_DIR: ${{ github.workspace }}/rs-target
     defaults:
       run:
-        working-directory: zt_dsp_rs
+        working-directory: isostress_rs
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       # ubuntu-latest images ship a stable Rust toolchain; no third-party action needed.
@@ -157,13 +167,13 @@ jobs:
       - name: Install the Python implementation
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ./zt_dsp_py
+          python -m pip install -e ./isostress_py
 
       - name: Build the Rust peer
-        working-directory: zt_dsp_rs
+        working-directory: isostress_rs
         run: cargo build --release
 
       - name: Interop suite, both directions
-        working-directory: zt_dsp_rs
-        run: python interop_test.py --rust-bin target/release/zt-dsp-rs --suite interop
+        working-directory: isostress_rs
+        run: python interop_test.py --rust-bin target/release/isostress-rs --suite interop
 

@@ -32,7 +32,7 @@ jobs:
       - name: Build wheel and sdist
         run: |
           python -m pip install --upgrade pip build
-          python -m build ./zt_dsp_py --outdir dist
+          python -m build ./isostress_py --outdir dist
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: dist
@@ -51,14 +51,14 @@ jobs:
       - name: Build
         run: |
           python -m pip install --upgrade pip pyinstaller
-          python -m pip install -e ./zt_dsp_py
-          pyinstaller --onefile --name zt_dsp_py zt_dsp_py/__main__.py
+          python -m pip install -e ./isostress_py
+          pyinstaller --onefile --name isostress_py isostress_py/__main__.py
       - name: Smoke test
-        run: dist/zt_dsp_py.exe --version
+        run: dist/isostress_py.exe --version
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: exe
-          path: dist/zt_dsp_py.exe
+          path: dist/isostress_py.exe
 
   github-release:
     name: Create draft GitHub Release
@@ -99,7 +99,7 @@ jobs:
           # tag was moved) must replace it instead of failing with "release already exists".
           gh release delete "$TAG" --yes --cleanup-tag=false 2>/dev/null || true
           gh release create "$TAG" \
-            --title "ZT-DSP client $TAG" \
+            --title "isostress client $TAG" \
             --generate-notes \
             --verify-tag \
             --draft \

@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-ZT-DSP client is distributed under AGPL-3.0-or-later, with a commercial option
+isostress client is distributed under AGPL-3.0-or-later, with a commercial option
 (see [LICENSING.md](LICENSING.md)). It links against, bundles, or is tested with
 the components listed here. Each component remains under its own license; nothing
 in this repository's license overrides them.
@@ -11,7 +11,7 @@ that require attribution.
 
 ## Rust crates
 
-Direct dependencies (`zt_dsp_rs/Cargo.toml`):
+Direct dependencies (`isostress_rs/Cargo.toml`):
 
 | Crate | License |
 |---|---|
@@ -87,8 +87,8 @@ This list is maintained by hand and can drift. Regenerate and compare with:
 
 ```bash
 cargo install cargo-deny cargo-about   # once
-cargo deny --manifest-path zt_dsp_rs/Cargo.toml check licenses
-cargo about generate --manifest-path zt_dsp_rs/Cargo.toml about.hbs
+cargo deny --manifest-path isostress_rs/Cargo.toml check licenses
+cargo about generate --manifest-path isostress_rs/Cargo.toml about.hbs
 python -m pip_licenses --format=markdown    # Python side
 ```
 

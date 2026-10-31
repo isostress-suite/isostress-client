@@ -3,10 +3,10 @@
 # A separate workspace: cargo-fuzz builds with nightly and its own sanitizer flags,
 # and mixing that into the release build would change what CI actually ships.
 #
-# The library target (zt_dsp_rs) is what this fuzzes -- before the [lib] target was
+# The library target (isostress_rs) is what this fuzzes -- before the [lib] target was
 # added, the crate was bin-only and could not be linked from a fuzz target at all.
 [package]
-name = "zt-dsp-rs-fuzz"
+name = "isostress-rs-fuzz"
 version = "0.0.0"
 publish = false
 edition = "2021"
@@ -18,8 +18,8 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 
-[dependencies.zt-dsp-rs]
-path = "../zt_dsp_rs"
+[dependencies.isostress-rs]
+path = "../isostress_rs"
 
 [[bin]]
 name = "frames"

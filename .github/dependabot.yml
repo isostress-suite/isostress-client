@@ -1,9 +1,9 @@
 # Keep dependencies patched. One entry per ecosystem present in the repository.
 #
-# The pip directory is `/zt_dsp_py`, NOT `/zt_dsp`: the package was renamed and the
+# The pip directory is `/isostress_py`, NOT `/isostress`: the package was renamed and the
 # manifest moved inside the package directory during the 1.0.0 rebuild. A stale
 # directory here is silently useless -- Dependabot reports success while scanning
-# a path that does not exist. Verified against zt_dsp_py/pyproject.toml.
+# a path that does not exist. Verified against isostress_py/pyproject.toml.
 #
 # Version-update proposals are off (open-pull-requests-limit: 0 in every
 # entry): the weekly proposals kept arriving as pull requests, and robot
@@ -14,14 +14,14 @@ version: 2
 
 updates:
   - package-ecosystem: pip
-    directory: /zt_dsp_py
+    directory: /isostress_py
     schedule:
       interval: weekly
     open-pull-requests-limit: 0
     labels: [dependencies, python]
 
   - package-ecosystem: cargo
-    directory: /zt_dsp_rs
+    directory: /isostress_rs
     schedule:
       interval: weekly
     open-pull-requests-limit: 0

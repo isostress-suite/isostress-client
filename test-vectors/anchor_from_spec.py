@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-# Copyright (c) 2026 ZT-DSP Suite maintainers (copyright holder: SCAL-ROAM)
+# Copyright (c) 2026 isostress Suite maintainers
 """Anchor values computed from the specification text alone.
 
-This file imports nothing from zt_dsp_py. It implements HKDF-SHA3-256 and the
+This file imports nothing from isostress_py. It implements HKDF-SHA3-256 and the
 derivations written in Master Guide 4.x directly on hashlib and hmac, so the
 numbers it prints are an outside reference for the library rather than a copy
 of what the library already produces.
@@ -38,10 +38,10 @@ def hkdf(ikm: bytes, info: bytes, length: int = HASH_LEN, salt: bytes = ZERO_SAL
 
 # Fixed inputs so the numbers are reproducible by hand.
 MK = bytes(range(32))
-ANCHOR = hmac_sha3(MK, b"ZT-DSP-ANCHOR-v3")
-SID = hkdf(ANCHOR, b"ZT-DSP-SID-v3")[:32]
-EK_SEND = hkdf(MK + ANCHOR + b"\x01", b"ZT-DSP-EK-v3")
-EK_RECV = hkdf(MK + ANCHOR + b"\x02", b"ZT-DSP-EK-v3")
+ANCHOR = hmac_sha3(MK, b"ISOSTRESS-ANCHOR-v3")
+SID = hkdf(ANCHOR, b"ISOSTRESS-SID-v3")[:32]
+EK_SEND = hkdf(MK + ANCHOR + b"\x01", b"ISOSTRESS-EK-v3")
+EK_RECV = hkdf(MK + ANCHOR + b"\x02", b"ISOSTRESS-EK-v3")
 
 VALUES = {
     "mk": MK.hex(),

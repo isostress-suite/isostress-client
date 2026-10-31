@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "isostress-py"
+version = "1.0.1"
+description = "isostress (ISTS) (code 1.0.0; follows the isostress Protocol Master Guide, docs 1.0.0)"
+requires-python = ">=3.10"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+dependencies = ["cryptography"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+isostress-py = "isostress_py.cli:main"
+
+[tool.setuptools]
+# Flat layout: the project root is the package directory (isostress_py/pyproject.toml lives inside the package)
+packages = ["isostress_py"]
+package-dir = { "isostress_py" = "." }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
