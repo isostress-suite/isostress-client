@@ -112,15 +112,30 @@ def test_out_of_window_packet_is_reported_and_session_continues(capsys) -> None:
     client, client_session, conn, server_session = _pair()
     chat = ChatSession(server_session, conn, read_stdin=False)
 
-    real_time = time.time
-    with mock.patch("isostress_py.session.time") as fake_time:
-        fake_time.time.return_value = real_time() - 120
-        fake_time.sleep.return_value = None
-        client_session.send_packet(client, b"late")
+    class _OffsetClock:
+        def __init__(self, offset):
+            self._offset = offset
+
+        def time(self):
+            return time.time() + self._offset
+
+        def sleep(self, _seconds):
+            return None
+
+        def monotonic(self):
+            return time.monotonic()
 
     worker = threading.Thread(target=chat.start)
     worker.start()
     try:
+        # The first packet establishes ts_ref; the window is relative to it.
+        client_session.send_packet(client, b"first")
+        deadline = time.time() + 5
+        while server_session.seq_recv < 0 and time.time() < deadline:
+            time.sleep(0.05)
+
+        with mock.patch("isostress_py.session.time", _OffsetClock(-120)):
+            client_session.send_packet(client, b"late")
         captured = ""
         deadline = time.time() + 5
         while "timestamp_window" not in captured and time.time() < deadline:
@@ -130,9 +145,9 @@ def test_out_of_window_packet_is_reported_and_session_continues(capsys) -> None:
 
         client_session.send_packet(client, b"current")
         deadline = time.time() + 5
-        while server_session.seq_recv < 1 and time.time() < deadline:
+        while server_session.seq_recv < 2 and time.time() < deadline:
             time.sleep(0.05)
-        assert server_session.seq_recv >= 1
+        assert server_session.seq_recv >= 2
     finally:
         client.close()
         worker.join(5)

@@ -41,6 +41,8 @@ struct SessionState {
     seq_send: u64,
     /// `None` = no packet has been received yet (Python-side initial value of seq_recv is -1)
     seq_recv: Option<u64>,
+    /// Timestamp of the first authenticated packet; the window is measured against it.
+    ts_ref: Option<u64>,
     closed: bool,
     last_recv_drop: Option<String>,
 }
@@ -83,6 +85,7 @@ impl SecureSession {
                 recv_ek: Some(material.recv_ek),
                 seq_send: 0,
                 seq_recv: None,
+                ts_ref: None,
                 closed: false,
                 last_recv_drop: None,
             }),
@@ -257,11 +260,12 @@ impl SecureSession {
             // Step 1: strictly increasing seq (initial seq_recv of None = Python's -1)
             if let Some(last) = st.seq_recv {
                 if seq <= last {
+                    // Appendix F.5 step 1 / G.4: a repeated or too-old seq is silently
+                    // discarded; the session continues and seq_recv does not advance.
                     drop(st);
-                    self.wipe();
-                    return Err(Error::security(format!(
-                        "replay or out-of-order packet detected: seq={seq} <= last={last}"
-                    )));
+                    let mut st = self.state.lock().unwrap();
+                    st.last_recv_drop = Some(format!("seq_replay: seq={seq} <= last={last}"));
+                    return Ok(Vec::new());
                 }
             }
             // Step 2: session ID match (frequency crosstalk / stale-session residue)
@@ -364,13 +368,21 @@ impl SecureSession {
             st.recv_ek = Some(new_ek);
             st.seq_recv = Some(seq);
         }
-        // Step 8: timestamp window — for out-of-window but authenticated packets: discard only the plaintext, do not terminate the session
+        // Step 8: timestamp window — measured against `ts_ref`, the timestamp of the
+        // session's first authenticated packet. Two ends whose wall clocks disagree stay
+        // in sync as long as they advance at the same rate.
         let ts = u64::from_be_bytes(payload[..TIMESTAMP_LEN].try_into().unwrap());
-        let now = now_ms();
-        let diff = (i128::from(now) - i128::from(ts)).abs();
+        let reference = {
+            let mut st = self.state.lock().unwrap();
+            *st.ts_ref.get_or_insert(ts)
+        };
+        let diff = (i128::from(ts) - i128::from(reference)).abs();
         if diff > i128::from(self.time_window) * 1000 {
             let mut st = self.state.lock().unwrap();
-            st.last_recv_drop = Some(format!("timestamp_window: ts={ts}ms, now={now}ms"));
+            st.last_recv_drop = Some(format!(
+                "timestamp_window: ts={ts}ms, ts_ref={reference}ms, delta={diff}ms, window={}s",
+                self.time_window
+            ));
             payload.zeroize();
             return Ok(Vec::new());
         }
@@ -400,6 +412,7 @@ impl SecureSession {
         st.session_id = None;
         st.seq_send = 0;
         st.seq_recv = None;
+        st.ts_ref = None;
         st.last_recv_drop = None;
     }
 }
@@ -492,7 +505,7 @@ mod tests {
     }
 
     #[test]
-    fn seq_regression_rejected() {
+    fn seq_regression_is_discarded() {
         let (sa, sb, mut a, mut b) = make_sessions(None);
         sa.send_packet(&mut a, b"m1").unwrap();
         assert_eq!(sb.recv_packet(&mut b).unwrap(), b"m1");
@@ -506,9 +519,15 @@ mod tests {
         use std::io::Write;
         b.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
         a.write_all(&packet).unwrap();
-        let err = sb.recv_packet(&mut b).unwrap_err();
-        assert!(matches!(err, Error::Security(_)), "got {err}");
-        assert!(!sb.is_active());
+        let got = sb.recv_packet(&mut b).unwrap();
+        assert!(got.is_empty(), "a repeated seq must be discarded silently");
+        assert!(
+            sb.last_recv_drop()
+                .unwrap_or_default()
+                .starts_with("seq_replay:"),
+            "drop reason should name the repeated seq"
+        );
+        assert!(sb.is_active(), "the session must survive a repeated seq");
     }
 
     #[test]
@@ -568,6 +587,9 @@ mod tests {
     fn stale_timestamp_advances_ratchet_without_plaintext() {
         // Construct an out-of-window but authenticated packet: manually encrypt a stale-timestamp payload with the session's internal state
         let (sa, sb, mut a, mut b) = make_sessions(None);
+        // The first authenticated packet establishes ts_ref; the window is relative to it.
+        sa.send_packet(&mut a, b"first").unwrap();
+        assert_eq!(sb.recv_packet(&mut b).unwrap(), b"first");
         let (ek_snap, sid, local, peer) = {
             let st = sa.state.lock().unwrap();
             (
@@ -584,7 +606,7 @@ mod tests {
         payload.extend_from_slice(&peer); // dst = peer (from the initiator's perspective peer=resp)
         payload.extend_from_slice(&local); // src = local
         payload.extend_from_slice(&[0xAB_u8; 32]); // next_seed placeholder
-        let seq: u64 = 0;
+        let seq: u64 = 1;
         let nonce = gcm_nonce(seq);
         let aad = build_aad(&sid, seq);
         let ct = aead_encrypt(&ek_snap, &nonce, &payload, &aad).unwrap();
@@ -602,7 +624,7 @@ mod tests {
                 .unwrap();
             ikm.zeroize();
             st.send_ek = Some(new_ek);
-            st.seq_send = 1;
+            st.seq_send = 2;
         }
         b.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
         a.write_all(&packet).unwrap();

@@ -89,6 +89,12 @@ lives in `git log`. If the two ever disagree, `git log` wins.
 
 ### Fixed
 
+- **The receive pipeline follows the 1.0.0 rules.** A repeated or too-old seq is
+  now discarded silently instead of terminating the session (F.5 step 1 / G.4), and
+  the timestamp window is measured against `ts_ref`, the timestamp of the session's
+  first authenticated packet (F.5 step 8), instead of the local wall clock. Two ends
+  whose clocks disagree by hours now interoperate, and the drop reason names both
+  `ts` and `ts_ref`.
 - **An out-of-window packet now reports why it was dropped.** The receiver
   prints `[Dropped] <reason>` to stderr with both timestamps and keeps the
   session; it previously dropped the plaintext silently.
