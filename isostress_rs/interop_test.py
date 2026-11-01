@@ -179,7 +179,12 @@ def suite_interop(rust_bin, port):
     psk = secrets.token_hex(32)
     # The Python side needs the repo root on PYTHONPATH to run as -m isostress_py;
     # inject it into this process's environment; all children inherit it.
-    os.environ["PYTHONPATH"] = str(REPO_ROOT)
+    # Prepend the repo root instead of replacing PYTHONPATH: a developer running the
+    # suite against a local virtualenv or an extra path would otherwise lose it.
+    _existing = os.environ.get("PYTHONPATH")
+    os.environ["PYTHONPATH"] = (
+        str(REPO_ROOT) + os.pathsep + _existing if _existing else str(REPO_ROOT)
+    )
     os.environ["PYTHONIOENCODING"] = "utf-8"
     py_launch = [py, "-u", "-m", "isostress_py"]
 

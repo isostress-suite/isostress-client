@@ -71,6 +71,9 @@ lives in `git log`. If the two ever disagree, `git log` wins.
   (`ISOSTRESS_PY-1.0.0-20261030`, `ISOSTRESS_RS-1.0.0-20261030`, `ISOSTRESS_SV-1.0.0-20261030`).
   The numeric version stays `1.0.0`, package metadata stays numeric-only, and the
   compatibility lists keep the date-free release form.
+- **`--no-stdin`.** The session reads nothing from the input and sends no application
+  data; heartbeats continue. A server process started in the background has no
+  terminal on its input, and the flag keeps the process from waiting for one.
 - CI now pins **every** action to a commit SHA. Two steps in the interop job were left
   on movable tags, which contradicted the stated policy on that file's own header.
 - The interop CI job is renamed from `Interop (Python <-> Rust, byte-level)` to
@@ -103,7 +106,23 @@ lives in `git log`. If the two ever disagree, `git log` wins.
   dependency needs >=3.10. The pyproject now maps the flat layout, depends
   on `isostress-py>=1.0.0`, carries `LICENSE` verbatim, and requires Python
   >=3.10; `pip wheel` produces a wheel whose METADATA shows all fields.
-
+- **A packet outside the timestamp window vanished without a line of output.** The
+  receiver computed the reason and dropped the plaintext, as the specification
+  requires, but nothing printed it, so a clock difference between the two ends
+  looked like a dead link. The receiver now prints the reason with both timestamps.
+- **Session diagnostics moved to stderr.** `[Dropped]`, `[Input closed]`,
+  `[Input disabled]`, `[Send failed]`, `[Timeout error]`, `[Security error]`,
+  `[Heartbeat failed]` and `[Input error]` are local notices, not wire bytes: they
+  now go to stderr in both implementations, while `[Peer]` text and the input
+  prompt stay on stdout. A piped session therefore no longer mixes local notices
+  into the data stream.
+- **The end of the input closed the connection.** The client read the input in the
+  main thread and shut the session down in a `finally` block, so a process started
+  in the background -- where the input ends at once -- closed the connection as soon
+  as the handshake finished. The peer then read the end of the stream, wiped its
+  session, and reported "session is irreversibly desynchronized or not established"
+  on its first send. An end of the input now stops the sending only; the receiving
+  goes on until the peer disconnects.
 - **20 source references pointed at appendix letters that no longer exist.** The docs repo
   commit `6e1d425` ("Prune stale appendices") removed appendices A / D / E, whose content
   had moved into the client README, but 20 docstrings and comments across `cli.py`,

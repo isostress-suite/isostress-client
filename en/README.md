@@ -80,6 +80,8 @@ export ISOSTRESS_PSK=<64-digit hex>       # Linux/macOS
 isostress-py --role listen --port 37291 --psk-env
 ```
 
+In a background service with no terminal on its input, add `--no-stdin`: the session stops reading stdin and stops application sends; heartbeats continue, and the process does not exit when the input ends. The clocks of the two ends must be in sync: data packets carry the sender's wall-clock timestamp, and when the difference exceeds the timestamp window (30 seconds by default) the receiver drops only the plaintext, keeps the session, and prints `[Dropped]` on stderr with both timestamps (stdout carries only peer text and the prompt).
+
 **Running with no arguments starts the interactive wizard** (recommended for beginners): it asks in turn for the role, address and port, the PSK (pressing Enter generates a fresh PSK and prints it for the peer) and the protocol parameters, with Enter accepting the default at every step. When stdin or stdout is redirected (pipe, CI, IDE), no-argument startup prints usage and exits 0 instead of blocking.
 
 Inside a session, type a message and press Enter to send; exit with /quit or Ctrl+C. For a two-instance demo on the local machine, open a second terminal and run the opposite role with the same PSK and parameters.
