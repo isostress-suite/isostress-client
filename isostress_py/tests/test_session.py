@@ -22,6 +22,30 @@ from isostress_py.session import SecureSession
 PSK = bytes(range(32))
 
 
+class _OffsetClock:
+    """Stand-in for the `time` module inside session.py: offsets wall clock, keeps monotonic real.
+
+    Patching the whole module with a bare MagicMock breaks deadline arithmetic
+    (`time.monotonic()` drives the half-packet timeout), so only wall clock moves.
+    """
+
+    def __init__(self, offset: float) -> None:
+        self._offset = offset
+
+    def time(self) -> float:
+        import time as _t
+
+        return _t.time() + self._offset
+
+    def sleep(self, _seconds: float) -> None:
+        return None
+
+    def monotonic(self) -> float:
+        import time as _t
+
+        return _t.monotonic()
+
+
 class _CaptureSock:
     """Lightweight proxy that captures sendall data (socket attributes are read-only; instances cannot be monkeypatched).
 
@@ -109,18 +133,21 @@ def test_heartbeat_empty_payload_and_165b_size() -> None:
 # =============================================================================
 
 
-def test_replay_rejection_terminates_session() -> None:
+def test_replayed_packet_is_discarded_and_session_survives() -> None:
     sa, sb, left, right = _establish()
     try:
         cap = _CaptureSock(left)
         sa.send_packet(cap, b"hello")
         assert sb.recv_packet(right) == b"hello"
 
-        # Resend the identical ciphertext packet verbatim (injected from the peer) -> duplicate seq -> security error + session terminated
+        # Resend the identical ciphertext packet verbatim: a repeated seq is discarded
+        # silently (F.5 step 1 / G.4); the session stays usable and nothing is sent back.
         left.sendall(cap.captured[0])
-        with pytest.raises(ISOSTRESSSecurityError):
-            sb.recv_packet(right)
-        assert not sb.is_active  # zeroized
+        assert sb.recv_packet(right) == b""
+        assert sb.last_recv_drop and sb.last_recv_drop.startswith("seq_replay:")
+        assert sb.is_active
+        sa.send_packet(left, b"again")
+        assert sb.recv_packet(right) == b"again"
     finally:
         force_close_socket(left)
         force_close_socket(right)
@@ -147,7 +174,7 @@ def test_tampered_header_fails_aad() -> None:
         sb.wipe()
 
 
-def test_seq_regression_rejected() -> None:
+def test_seq_regression_is_discarded() -> None:
     sa, sb, left, right = _establish()
     try:
         sa.send_packet(left, b"one")  # sequence 0
@@ -160,9 +187,9 @@ def test_seq_regression_rejected() -> None:
             sb.session_id + struct.pack(">Q", 0) + struct.pack(">I", 16) + b"\x00" * 16
         )
         left.sendall(bogus)
-        with pytest.raises(ISOSTRESSSecurityError):
-            sb.recv_packet(right)
-        assert not sb.is_active
+        assert sb.recv_packet(right) == b""
+        assert sb.last_recv_drop and sb.last_recv_drop.startswith("seq_replay:")
+        assert sb.is_active
     finally:
         force_close_socket(left)
         force_close_socket(right)
@@ -178,17 +205,33 @@ def test_seq_regression_rejected() -> None:
 def test_stale_timestamp_advances_ratchet_without_plaintext() -> None:
     sa, sb, left, right = _establish()
     try:
-        real_time = __import__("time").time
-        with mock.patch("isostress_py.session.time") as fake_time:
-            fake_time.time.return_value = (
-                real_time() - 120
-            )  # timestamp 120 s in the past
-            fake_time.sleep.return_value = None
-            sa.send_packet(left, b"late")  # seq 0, out of window
+        sa.send_packet(left, b"first")  # seq 0: establishes ts_ref
+        assert sb.recv_packet(right) == b"first"
+        with mock.patch("isostress_py.session.time", _OffsetClock(-120)):
+            sa.send_packet(left, b"late")  # seq 1, 120 s behind ts_ref
         assert sb.recv_packet(right) == b""  # plaintext dropped
+        assert sb.last_recv_drop and "ts_ref=" in sb.last_recv_drop
         # Ratchet has advanced (following the in-packet next_seed): the next "fresh" packet still decrypts normally
-        sa.send_packet(left, b"current")  # sequence 1
+        sa.send_packet(left, b"current")  # sequence 2
         assert sb.recv_packet(right) == b"current"
+    finally:
+        force_close_socket(left)
+        force_close_socket(right)
+        sa.wipe()
+        sb.wipe()
+
+
+def test_timestamp_window_ignores_the_receiver_wall_clock() -> None:
+    """The window is relative to ts_ref, so a receiver whose clock is a day off still receives."""
+    sa, sb, left, right = _establish()
+    try:
+        with mock.patch("isostress_py.session.time", _OffsetClock(86400)):
+            # The sender's clock is 86400 s ahead of the receiver's; the receiver never
+            # reads its own wall clock, so both packets are delivered.
+            sa.send_packet(left, b"one")
+            assert sb.recv_packet(right) == b"one"
+            sa.send_packet(left, b"two")
+            assert sb.recv_packet(right) == b"two"
     finally:
         force_close_socket(left)
         force_close_socket(right)

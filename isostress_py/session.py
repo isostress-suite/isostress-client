@@ -63,6 +63,7 @@ class SecureSession:
         "seq_send",
         "seq_recv",
         "last_recv_drop",
+        "ts_ref",
         "_send_lock",
         "_recv_lock",
         "_state_lock",
@@ -83,6 +84,7 @@ class SecureSession:
         self.seq_send: int = 0
         self.seq_recv: int = -1
         self.last_recv_drop: Optional[str] = None
+        self.ts_ref: Optional[int] = None
         self._send_lock = threading.RLock()
         self._recv_lock = threading.RLock()
         self._state_lock = threading.RLock()
@@ -186,10 +188,13 @@ class SecureSession:
                     )
                 # Step 1: seq must strictly increase (seq_recv is initialized to -1)
                 if seq <= self.seq_recv:
-                    self._terminate()
-                    raise ISOSTRESSSecurityError(
-                        f"Replay or out-of-order packet detected: seq={seq} <= last={self.seq_recv}"
+                    # Appendix F.5 step 1 / G.4: a repeated or too-old seq is silently
+                    # discarded. The session continues, seq_recv does not advance, and
+                    # nothing is sent back.
+                    self.last_recv_drop = (
+                        f"seq_replay: seq={seq} <= last={self.seq_recv}"
                     )
+                    return b""
                 # Step 2: session ID must match (cross-channel crosstalk / residual old session)
                 if session_id != bytes(self.session_id):
                     self._terminate()
@@ -279,12 +284,19 @@ class SecureSession:
             self.recv_ek = bytearray(new_ek)
             self.seq_recv = seq
 
-            # Step 8: timestamp window -- for an out-of-window but authenticated packet: only the plaintext is dropped, the session is not terminated
+            # Step 8: timestamp window -- measured against ts_ref, the timestamp of the
+            # session's first authenticated packet. Two ends whose wall clocks disagree
+            # stay in sync as long as they advance at the same rate.
             ts = struct.unpack(">Q", payload[:TIMESTAMP_LEN])[0]
-            now_ms = int(time.time() * 1000)
-            if abs(now_ms - ts) > self.time_window * 1000:
+            if self.ts_ref is None:
+                # First packet that passed steps 4-7: it defines the reference point.
+                self.ts_ref = ts
+            delta = ts - self.ts_ref
+            if abs(delta) > self.time_window * 1000:
                 self.last_recv_drop = (
-                    f"timestamp_window: ts={ts / 1000:.1f}s, now={now_ms / 1000:.1f}s"
+                    f"timestamp_window: ts={ts / 1000:.1f}s, "
+                    f"ts_ref={self.ts_ref / 1000:.1f}s, delta={delta / 1000:.1f}s, "
+                    f"window={self.time_window}s"
                 )
                 return b""
 
