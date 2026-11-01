@@ -53,6 +53,13 @@ lives in `git log`. If the two ever disagree, `git log` wins.
   regenerated. Numbering restarts at 1.0.0 on 2026-10-29: development builds advance
   only the `-YYYYMMDD` segment; a numeric bump happens only on a wire-format change or
   a release.
+- **The single-file collection rule is withdrawn.** The `合并 / 收录提议` row of
+  `cn/README.md` and its `en/README.md` counterpart no longer require an implementation
+  to be collected into one file, and the accompanying ban on new directory trees under
+  the mainline directory goes with it: implementations follow the ordinary engineering
+  layout of the language in use, subdirectories included. The Rust entry-point and
+  library comments now describe flatness as the current state rather than a collection
+  requirement, and the "future consolidation into a single source file" note is gone.
 - **The Rust key-holding structs no longer expose themselves to `{:?}`.**
   `SessionMaterial`, `SessionState` and `SessionConfig` carried derived
   `Debug`, and the first and last also derived `Clone`. `SessionMaterial`
