@@ -71,6 +71,32 @@ def test_end_of_input_stops_only_the_sending(monkeypatch, capsys) -> None:
     conn.close()
 
 
+def test_input_without_a_usable_console_stops_only_the_sending(
+    monkeypatch, capsys
+) -> None:
+    """Windows: a detached console raises OSError/RuntimeError from input(), not EOFError.
+
+    The input path is unusable, so the sending stops; the session keeps receiving.
+    """
+    client, client_session, conn, server_session = _pair()
+    chat = ChatSession(server_session, conn)
+
+    def no_console(*_args, **_kwargs):
+        raise OSError(6, "The handle is invalid")
+
+    monkeypatch.setattr("builtins.input", no_console)
+    chat._send_loop()
+
+    captured = capsys.readouterr()
+    assert "[Input unavailable]" in captured.err
+    assert chat._running is True
+    client_session.send_packet(client, "still here".encode("utf-8"))
+    assert server_session.recv_packet(conn) == "still here".encode("utf-8")
+    chat.shutdown()
+    client.close()
+    conn.close()
+
+
 def test_quit_command_closes_the_session(monkeypatch) -> None:
     """The quit command is an explicit order: the session closes."""
     client, _client_session, conn, server_session = _pair()

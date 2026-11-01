@@ -126,6 +126,16 @@ class ChatSession:
                             file=sys.stderr,
                         )
                     return
+                except (OSError, RuntimeError, ValueError) as exc:
+                    # Windows: a detached console leaves the process with no usable
+                    # stdin handle, and input() raises OSError/RuntimeError instead of
+                    # EOFError. Treat it as end of input: stop sending, keep receiving.
+                    with self._print_lock:
+                        print(
+                            f"\r[Input unavailable] {exc}; sending stopped; receiving continues",
+                            file=sys.stderr,
+                        )
+                    return
                 if not msg:
                     continue
                 if msg.strip().lower() in ("/quit", "/exit", "/q"):
