@@ -87,6 +87,11 @@ lives in `git log`. If the two ever disagree, `git log` wins.
 - The Rust integration tests moved from the binary entry point into the library, so they
   can reach the modules directly.
 
+- **A Windows session started without a usable console no longer dies on input.**
+  When the console is detached, `input()` raises `OSError`/`RuntimeError` rather than
+  `EOFError`; the send path now treats that as end of input — sending stops, receiving
+  goes on — and reports `[Input unavailable]` on stderr.
+
 ### Fixed
 
 - **An out-of-window packet now reports why it was dropped.** The receiver
