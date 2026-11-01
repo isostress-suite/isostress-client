@@ -12,6 +12,11 @@ lives in `git log`. If the two ever disagree, `git log` wins.
 
 ### Added
 
+- **`--no-stdin`.** The session reads nothing from the input and sends no
+  application data; heartbeats continue. A server process started in the
+  background has no terminal on its input, and the flag keeps the process
+  from waiting for one. The Rust `ChatSession::with_input` constructor
+  exposes the same switch without breaking `new`.
 - **isostress 1.0.0 specification additions (normative).** The 1.0.0 working tree adds a
   normative resource bound to H.3 -- per held connection: hold duration, concurrent
   held-connection count, and buffered-byte bound; the hold duration range is `(0, 15s]`
@@ -83,6 +88,12 @@ lives in `git log`. If the two ever disagree, `git log` wins.
   can reach the modules directly.
 
 ### Fixed
+
+- **An out-of-window packet now reports why it was dropped.** The receiver
+  prints `[Dropped] <reason>` to stderr with both timestamps and keeps the
+  session; it previously dropped the plaintext silently.
+- **The end of the input no longer closes the connection.** It stops the
+  sending only; the receiving continues until the peer disconnects.
 
 - **A legal JSON number crashed the responder outside the funnel.** `json.loads`
   parses `1e999` to float infinity, and `int(inf)` raises `OverflowError`, which
