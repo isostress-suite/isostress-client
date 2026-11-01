@@ -60,6 +60,10 @@ Two known traps:
 2. Building the Rust crate from a non-ASCII working directory (for example a Chinese path on
    Windows) requires `CARGO_TARGET_DIR` to point at an ASCII path.
 
+A session started in the background keeps receiving after its input ends. `--no-stdin`
+switches the input off entirely. An out-of-window packet drops only the plaintext, keeps
+the session, and prints `[Dropped]` to local stderr with both timestamps.
+
 Rust reference implementation (`isostress_rs/`):
 
 ```bash

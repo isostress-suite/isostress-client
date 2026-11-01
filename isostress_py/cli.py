@@ -381,6 +381,11 @@ License:
         action="store_true",
         help="Do not print the startup banner (also via ISOSTRESS_NO_BANNER)",
     )
+    parser.add_argument(
+        "--no-stdin",
+        action="store_true",
+        help="Do not read the input; the session only receives",
+    )
     return parser
 
 
@@ -527,6 +532,7 @@ def main() -> None:
             ),
             "jitter": ns.jitter,
             "silent_hold": ns.silent_hold,
+            "read_stdin": not ns.no_stdin,
         }
     )
 
