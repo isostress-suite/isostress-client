@@ -78,9 +78,12 @@ def _is_self_connection(host: str, port: int) -> bool:
 class ChatSession:
     """Three-thread interactive session: receive / heartbeat / send. shutdown is idempotent (Appendix H.6)."""
 
-    def __init__(self, session: SecureSession, sock: socket.socket) -> None:
+    def __init__(
+        self, session: SecureSession, sock: socket.socket, read_stdin: bool = True
+    ) -> None:
         self.session = session
         self.sock = sock
+        self._read_stdin = read_stdin
         self._running = True
         self._print_lock = threading.Lock()
         self._recv_thread: Optional[threading.Thread] = None
@@ -97,33 +100,50 @@ class ChatSession:
         )
         self._recv_thread.start()
         self._heartbeat_thread.start()
-        self._send_loop()
+        if self._read_stdin:
+            self._send_loop()
+        else:
+            with self._print_lock:
+                print("[Input disabled] receiving only", file=sys.stderr)
+        if self._running:
+            # The input ended but the connection lives: keep serving the peer
+            try:
+                self._recv_thread.join()
+            except KeyboardInterrupt:
+                self.shutdown()
 
     # -- Send (main thread) ---------------------------------------------------
     def _send_loop(self) -> None:
+        """Read the input and send it. An end of input stops the sending only."""
         try:
             while self._running:
                 try:
                     msg = input("> ")
                 except EOFError:
-                    break
+                    with self._print_lock:
+                        print(
+                            "\r[Input closed] sending stopped; receiving continues",
+                            file=sys.stderr,
+                        )
+                    return
                 if not msg:
                     continue
                 if msg.strip().lower() in ("/quit", "/exit", "/q"):
-                    break
+                    self.shutdown()
+                    return
                 try:
                     self.session.send_packet(self.sock, msg.encode("utf-8"))
                 except ISOSTRESSError as e:
                     with self._print_lock:
-                        print(f"\r[Send failed] {e}")
-                    break
+                        print(f"\r[Send failed] {e}", file=sys.stderr)
+                    self.shutdown()
+                    return
                 except (ConnectionError, BrokenPipeError, OSError) as e:
                     with self._print_lock:
-                        print(f"\r[Send failed] {e}")
-                    break
+                        print(f"\r[Send failed] {e}", file=sys.stderr)
+                    self.shutdown()
+                    return
         except KeyboardInterrupt:
-            pass
-        finally:
             self.shutdown()
 
     # -- Receive (thread) -----------------------------------------------------
@@ -134,26 +154,38 @@ class ChatSession:
                     data = self.session.recv_packet(self.sock)
                 except ISOSTRESSTimeoutError as e:
                     with self._print_lock:
-                        print(f"\r[Timeout error] {e}")
+                        print(f"\r[Timeout error] {e}", file=sys.stderr)
                     break
                 except (ConnectionError, OSError):
                     break
                 except ISOSTRESSError as e:
                     with self._print_lock:
-                        print(f"\r[Security error] {e}")
+                        print(f"\r[Security error] {e}", file=sys.stderr)
                     break
                 if len(data) == 0:
-                    continue  # Heartbeat / out-of-window packet: skip silently
+                    # A heartbeat carries no text; an out-of-window packet is
+                    # dropped on purpose, and the reason says which one it was
+                    reason = self.session.last_recv_drop
+                    if reason:
+                        with self._print_lock:
+                            print(f"\r[Dropped] {reason}", file=sys.stderr)
+                            if self._read_stdin:
+                                print("> ", end="", flush=True)
+                    continue
                 try:
                     text = data.decode("utf-8")
                 except UnicodeDecodeError:
                     text = repr(data)
                 with self._print_lock:
-                    print(f"\r[Peer] {text}\n> ", end="", flush=True)
+                    print(f"\r[Peer] {text}")
+                    if self._read_stdin:
+                        print("> ", end="", flush=True)
         except (ConnectionError, OSError, ISOSTRESSError) as exc:
             if self._running:
                 with self._print_lock:
-                    print(f"\r[Error] {exc}\n> ", end="", flush=True)
+                    print(f"\r[Error] {exc}", file=sys.stderr)
+                    if self._read_stdin:
+                        print("> ", end="", flush=True)
         finally:
             self.shutdown()
 
@@ -170,13 +202,16 @@ class ChatSession:
                 except (ConnectionError, BrokenPipeError, OSError, ISOSTRESSError):
                     if self._running:
                         with self._print_lock:
-                            print("\r[Heartbeat failed] connection may have been lost")
+                            print(
+                                "\r[Heartbeat failed] connection may have been lost",
+                                file=sys.stderr,
+                            )
                         self.shutdown()
                     break
         except Exception as exc:
             if self._running:
                 with self._print_lock:
-                    print(f"\r[Heartbeat error] {exc}")
+                    print(f"\r[Heartbeat error] {exc}", file=sys.stderr)
                 self.shutdown()
 
     # -- Idempotent shutdown ---------------------------------------------------------
@@ -259,7 +294,9 @@ def run_listen(args: Dict[str, Any]) -> None:
 
         print("[+] Handshake complete; secure channel established.")
         print("    Type a message and press Enter to send; /quit or Ctrl+C to exit\n")
-        ChatSession(SecureSession(material), conn).start()
+        ChatSession(
+            SecureSession(material), conn, read_stdin=args.get("read_stdin", True)
+        ).start()
     except OSError as e:
         print(f"\n[!] Listen failed: {e}")
         print("    Possible causes: port in use / insufficient permissions")
@@ -326,7 +363,11 @@ def run_connect(args: Dict[str, Any]) -> None:
                 print(
                     "    Type a message and press Enter to send; /quit or Ctrl+C to exit\n"
                 )
-                ChatSession(SecureSession(material), conn).start()
+                ChatSession(
+                    SecureSession(material),
+                    conn,
+                    read_stdin=args.get("read_stdin", True),
+                ).start()
                 return
             except (ConnectionError, OSError) as e:
                 if attempt < max_retries:
