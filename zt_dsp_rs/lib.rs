@@ -3,10 +3,10 @@
 
 //! ZT-DSP_RS-1.0.0 — library entry point.
 //!
-//! The crate root is also the binary entry point (`zt-dsp-rs.rs`), which is the
-//! project's documented flat layout: every module file lives in this directory and is
-//! pulled in with `#[path]`. That convention is preserved here — this file exists so
-//! the crate can **also** be consumed as a library.
+//! The crate root is also the binary entry point (`zt-dsp-rs.rs`), which uses the
+//! crate's current flat layout: every module file lives in this directory and is
+//! pulled in with `#[path]`. Flatness is the current state, not a collection
+//! requirement. This file exists so the crate can **also** be consumed as a library.
 //!
 //! Why that matters: before this target existed, `zt-dsp-rs` could only ever be run as
 //! a binary. A third party could not depend on the protocol implementation, and
