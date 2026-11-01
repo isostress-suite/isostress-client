@@ -26,8 +26,10 @@ license and does not limit any right that license grants.
 - Describe a modified version, fork, or independent implementation as official,
   reference, canonical, or the isostress implementation.
 - Use the isostress logo as your product icon, or anywhere it implies endorsement.
-- Publish a fork to PyPI or crates.io under the names isostress-py, isostress_py, isostress-rs
-  or isostress_rs. Those names identify the isostress project.
+- Publish a fork to PyPI or crates.io under the names isostress-py, isostress_py, isostress-rs,
+  isostress_rs, isostress-server or isostress_server. Those names identify the isostress project.
+- Publish under the retired names zt-dsp-py, zt_dsp_py, zt-dsp-rs, zt_dsp_rs, zt-dsp-server or
+  zt_dsp_server, including as a redirect to a renamed fork. The rename does not release them.
 - Register a domain, package name, organisation name or social account that
   incorporates the marks in a way that implies you are the project.
 
