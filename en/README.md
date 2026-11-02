@@ -164,7 +164,7 @@ and a real two-sided TCP flow.
 | participates in network communication | No (the version number itself does not participate; handshake frames carry no version string) |
 | other-language implementations | the development languages are Python and Rust; to add another language, create a sibling directory named after its program ID (for example isostress_go/), alongside isostress_py/ and isostress_rs/, with a protocol conformance checklist attached |
 | server implementations | a server implementation is named after its program ID as well (isostress_sv_py/) and carries a protocol conformance checklist; a server never decrypts, it only pairs and relays bytes |
-| merge / recording suggestions | when merging a fork, when a maintainer creates a new branch, or when promoting a standalone implementation to the mainline, the core recommendation is: **collect all code into a single file** (one implementation per file, no new directory trees added to the mainline directory), with a protocol conformance checklist attached |
+| merge / recording suggestions | when merging a fork, when a maintainer creates a new branch, or when promoting a standalone implementation to the mainline, the core recommendation is: implementation code follows the ordinary engineering layout of the language in use, with **no single-file requirement**; subdirectories under the mainline directory are now permitted, and a protocol conformance checklist is attached |
 
 #### Applicability (many-to-many)
 
